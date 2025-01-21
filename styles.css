@@ -1,0 +1,1046 @@
+.path-report-courseagenda .mag-container_agenda {
+    margin: auto;
+    max-width: 1800px;
+    min-width: 320px;
+    background-color: var(--light);
+    padding: 10px;
+}
+
+.path-report-courseagenda .mag-container_agenda .mag-header {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    margin-bottom: 28px;
+    overflow: hidden;
+    border-radius: 0.25rem;
+    background-color: #fff;
+    /* offset-x | offset-y | blur-radius | color */
+    box-shadow: 0 2px 6px rgb(240, 240, 240);
+}
+
+.path-report-courseagenda .mag-agenda_content {
+    margin-top: -20px;
+    /* top and bottom | left and right */
+    padding: 0.75rem 0.5rem;
+    background: #f9f9f9;
+}
+
+.path-report-courseagenda .mag-header_info-course {
+    grid-column: span 9 / span 9;
+    justify-content: left;
+    text-align: left;
+    padding: 10px;
+    align-items: center;
+}
+
+.path-report-courseagenda .mag-header_info-date {
+    display: grid;
+    grid-column: span 3 / span 3;
+    justify-content: right;
+    padding: 20px;
+    align-items: center;
+    line-height: 10px;
+    font-size: 18px;
+    color: #525252;
+    background-color: #fff;
+}
+
+.path-report-courseagenda .mag-info-header {
+    margin-bottom: 15px;
+}
+
+.path-report-courseagenda .mag-header_info-progress {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.path-report-courseagenda .mag-progress-circle {
+    transform: rotate(180deg);
+    /* Rotate: Rotate the entire SVG so it starts from the top */
+}
+
+.path-report-courseagenda .mag-progress-indicator {
+    transition: stroke-dashoffset 0.35s;
+    transform: rotate(90deg);
+    /* Counteract the rotation of the SVG */
+    transform-origin: center;
+    stroke-linecap: round;
+    /* Rounded edges */
+}
+
+.path-report-courseagenda .mag-header_info-progress span {
+    position: absolute;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.path-report-courseagenda .mag-header_info-text {
+    margin-left: 20px;
+    font-size: 16px;
+    line-height: 0.35em;
+    color: #7a7a7a;
+}
+
+.path-report-courseagenda .mag-header_info-text p {
+    padding: 0;
+    line-height: 1.5;
+}
+
+.path-report-courseagenda .mag-header_info-courseName {
+    font-size: 20px;
+    font-weight: bold;
+    color: #476873;
+    border-bottom: 1px solid #d8d8d8;
+
+}
+
+.path-report-courseagenda .mag-header_info-text span {
+    font-weight: 500;
+    color: #476873;
+}
+
+.path-report-courseagenda .mag-header_info-date span {
+    font-weight: bold;
+    color: #6d6f6d;
+}
+
+/* This is where the header CSS ends (excluding responsive design) */
+.path-report-courseagenda .mag-agenda_content > section {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    margin-bottom: 28px;
+}
+
+.path-report-courseagenda .mag-unit_conditions-info {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0 15px;
+    font-size: 0.9rem;
+    font-weight: normal;
+}
+
+.path-report-courseagenda .mag-section_unit.mag-unit-bloqued.active .mag-unit_conditions-info {
+    max-height: 150px;
+    padding: 10px 15px;
+    text-align: left;
+}
+
+.path-report-courseagenda .mag-custom-select {
+    position: relative;
+    width: 100%;
+    margin-left: 20px;
+    margin-top: 20px;
+}
+
+.path-report-courseagenda .mag-select-agenda {
+    width: 100%;
+    padding: 10px 40px 10px 35px;
+    font-size: 16px;
+    background-color: #ededed;
+    border: none;
+    appearance: none;
+    cursor: pointer;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    border-radius: 4px;
+    box-sizing: border-box;
+    color: #818181;
+}
+
+.path-report-courseagenda .mag-select-agenda option:first-child {
+    color: #818181;
+}
+
+.path-report-courseagenda .mag-select-agenda:focus {
+    outline: none;
+
+}
+
+.chevron {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #818181;
+}
+
+.calendar-icon {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    color: #818181;
+    pointer-events: none;
+}
+
+.path-report-courseagenda .mag-unit-bloqued {
+    cursor: pointer;
+}
+
+.path-report-courseagenda .mag-select-activity {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    background-color: #e7e7e7;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    box-sizing: border-box;
+    color: #6e6e6e;
+    font-family: Roboto Condensed;
+}
+
+.path-report-courseagenda .mag-select-activity:focus {
+    outline: none;
+}
+
+.path-report-courseagenda .mag-section-bloqued {
+    opacity: 80%;
+}
+
+.path-report-courseagenda .mag-section_unit {
+    display: grid;
+    grid-column: span 3 / span 3;
+    place-content: center;
+    text-align: center;
+    height: auto;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    background-color: #fff;
+    box-shadow: 0 2px 3px -1px rgba(97, 97, 97, 0.1);
+    padding: 10px;
+}
+
+.path-report-courseagenda .mag-unit_content-text {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+.path-report-courseagenda .mag-unit_content-text p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+.path-report-courseagenda .mag-unit-bloqued {
+    background-color: #ededed;
+    border: solid 1px #e3e3e3;
+}
+
+.path-report-courseagenda .mag-section_unit-moudle {
+    font-size: 25px;
+    color: #4c4c4c;
+    margin-bottom: 10px;
+}
+
+.path-report-courseagenda .mag-section_unit-title {
+    font-size: 20px;
+    color: #6c6c6c;
+}
+
+.path-report-courseagenda .mag-section_unit-date {
+    display: block;
+    font-size: 1rem;
+    line-height: 1.25rem;
+    color: #328094;
+}
+
+.path-report-courseagenda .mag-section_activity {
+    display: flex;
+    grid-column: span 9 / span 9;
+    flex-wrap: wrap;
+    margin-left: 0.75rem;
+    row-gap: 0.75rem;
+    width: 100%;
+}
+
+.path-report-courseagenda .mag-section_activity > div {
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* top and bottom | left and right */
+    padding: 0.25rem 0.75rem;
+    margin-right: 0.75rem;
+    border-radius: 0.25rem;
+    width: 100%;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    background: #fff;
+    box-shadow: 0 2px 3px -1px rgba(97, 97, 97, 0.1);
+    min-height: 55px;
+    transition: all 0.3s ease;
+}
+
+.path-report-courseagenda .mag-container_agenda a {
+    text-decoration: none;
+}
+
+/*block of information for each section*/
+.path-report-courseagenda .mag-agenda_activity-info {
+    display: none;
+    overflow: hidden;
+    /* top and bottom | left and right */
+    height: 0;
+    /*Block size info*/
+    padding: 0.30% 0%;
+    background-color: #fff;
+    border-top: 1px solid #d8d8d8;
+    transition: height 0.3s ease-out;
+}
+
+.path-report-courseagenda .mag-section_activity > div.active .mag-agenda_activity-info {
+    display: inline-block;
+    height: auto;
+}
+
+.path-report-courseagenda .mag-activity_qualified-approved {
+    position: relative;
+    border-left: solid #50b447 5.8px;
+    display: inline-block;
+
+
+}
+
+.path-report-courseagenda .mag-activity-pending {
+    position: relative;
+    border-left: solid #e09523 5.8px;
+}
+
+.path-report-courseagenda .mag-activity-delivered {
+    position: relative;
+    border-left: solid #3593ab 5.8px;
+}
+
+.path-report-courseagenda .mag-activity-retarded,
+.path-report-courseagenda .mag-activity_qualified-failed {
+    position: relative;
+    border-left: solid #d04961 5.8px;
+}
+
+.path-report-courseagenda .mag-activity-blocked {
+    position: relative;
+    border-left: solid #646464 5.8px;
+}
+
+.path-report-courseagenda .mag-activity_content {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    padding-left: 10px;
+    transition: padding-left 0.5s ease;
+}
+
+.path-report-courseagenda .mag-agenda_activity_weighting-detailed,
+.path-report-courseagenda .mag-detailed_grading-method {
+    text-align: center;
+    width: 110px;
+    padding: 3px 5px;
+    border-radius: 0.25rem;
+    font-size: 0.94rem;
+    font-weight: 400;
+    color: #fff;
+    box-shadow: 0 1px 5px rgb(240, 240, 240);
+}
+
+.path-report-courseagenda .mag-detailed_grading-method {
+    width: 160px;
+    max-width: 160px;
+    margin-left: 10px;
+    border: solid #545454 0.5px;
+    color: #545454;
+}
+
+.path-report-courseagenda .mag-agenda_activity_weighting-detailed span {
+    font-weight: bolder;
+}
+
+/* It is part of the hover that only goes up to 1024px, but it is extracted from the media query to reuse its "bg" property */
+.path-report-courseagenda .mag-weighing_qualified-approved,
+.path-report-courseagenda .mag-detailedWeighting_qualified-approved {
+    background-color: #50b447;
+}
+
+.path-report-courseagenda .mag-weighing-pending,
+.path-report-courseagenda .mag-detailedWeighting-pending {
+    background-color: #e09523;
+}
+
+.path-report-courseagenda .mag-weighing-delivered,
+.path-report-courseagenda .mag-detailedWeighting-delivered {
+    background-color: #3593ab;
+}
+
+.path-report-courseagenda .mag-weighing-retarded,
+.path-report-courseagenda .mag-weighing_qualified-failed,
+.path-report-courseagenda .mag-detailedWeighting_qualified-failed,
+.path-report-courseagenda .mag-detailedWeighting-retarded {
+    background-color: #d04961;
+}
+
+.path-report-courseagenda .mag-weighing-blocked,
+.path-report-courseagenda .mag-detailedWeighting-blocked {
+    background-color: #646464;
+}
+
+.path-report-courseagenda .mag-activity_content-name {
+    display: grid;
+    grid-column: span 5 / span 5;
+}
+
+.path-report-courseagenda .mag-activity_content-name > div {
+    display: flex;
+    align-items: center;
+}
+
+.path-report-courseagenda .mag-name_content-icon {
+    margin-right: 0.5rem;
+}
+
+.path-report-courseagenda .mag-name_content-icon > i {
+    text-align: center;
+    margin-right: 0.25rem;
+    font-size: 22px;
+}
+
+.path-report-courseagenda .mag-icon_qualified-approved {
+    color: #50b447;
+}
+
+.path-report-courseagenda .mag-activity_icon-pending {
+    color: #e09523;
+}
+
+.path-report-courseagenda .mag-activity_icon-delivered {
+    color: #3593ab;
+}
+
+.path-report-courseagenda .mag-activity_icon-retarded,
+.path-report-courseagenda .mag-icon_qualified-failed {
+    color: #d04961;
+}
+
+.path-report-courseagenda .mag-activity_icon-blocked {
+    color: #3f3f3f;
+}
+
+.path-report-courseagenda .mag-activity_name-text {
+    margin-right: 0.25rem;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5rem;
+    color: #2c2c2c;
+}
+
+.path-report-courseagenda .mag-activity_name-span {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 1rem;
+    color: #6d6f6d;
+}
+
+.path-report-courseagenda .mag-countdown {
+    color: #e09523;
+}
+
+.path-report-courseagenda .mag-activity_span-approved {
+    color: #50b447;
+}
+
+.path-report-courseagenda .mag-span-delivered {
+    color: #328094;
+}
+
+.path-report-courseagenda .mag-span-retarded,
+.path-report-courseagenda .mag-activity_span-failed {
+    color: #d04961 !important;
+}
+
+.path-report-courseagenda .mag-activity_content-date {
+    display: flex;
+    grid-column: span 4 / span 4;
+    align-items: center;
+}
+
+.path-report-courseagenda .mag-activity_content-date > p {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.25rem;
+    color: #818181;
+}
+
+.path-report-courseagenda .mag-activity_content-weighting {
+    display: flex;
+    grid-column: span 1 / span 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.path-report-courseagenda .mag-date_content-span {
+    font-weight: 400;
+    line-height: 1.5rem;
+    color: #404040;
+}
+
+.path-report-courseagenda .mag-activity_content-state {
+    display: grid;
+    grid-column: span 2 / span 2;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.path-report-courseagenda .mag-activity_content-qualification {
+    display: flex;
+    align-items: center;
+    padding: 10px 35px;
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.75rem;
+}
+
+.path-report-courseagenda .mag-approved-qualification {
+    color: #50b447;
+}
+
+.path-report-courseagenda .mag-failed-qualification {
+    color: #d04961;
+}
+
+.path-report-courseagenda .mag-qualification_icon {
+    font-size: 15px;
+    color: #8b8b8b;
+    margin-left: 6px;
+}
+
+.path-report-courseagenda .mag-activity_icon-state {
+    color: #50b447;
+}
+
+.path-report-courseagenda .mag-activity_state {
+    width: 6rem;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.25rem;
+}
+
+.path-report-courseagenda .mag-state-pending {
+    border: solid 1px #ffd89e;
+    color: #e09523;
+    background: #fff6e8;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+
+.path-report-courseagenda .mag-state-delivered {
+    background: #dcf9ff;
+    border: solid 1px #6bbed3;
+    color: #3593ab;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.path-report-courseagenda .mag-state-retarded {
+    background: #fff0f3;
+    border: solid 1px #ffc4cd;
+    color: #d04961;
+    font-weight: bold;
+    font-size: 13px;
+
+}
+
+.path-report-courseagenda .mag-teacher_state-qualified {
+    background: #f0ffef;
+    border: solid 1px #a2ee9b;
+    color: #50b447;
+}
+
+.path-report-courseagenda .mag-activity_state-mobile {
+    display: none;
+    grid-column: span 3 / span 3;
+    align-items: center;
+    justify-content: end;
+    /* top | right | bottom | left */
+    padding: 0.75rem 0.75rem 0.75rem 0.75rem;
+}
+
+.path-report-courseagenda .mag-activity_content-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.path-report-courseagenda .mag-container_icons-show-more {
+    line-height: 0%;
+}
+
+.path-report-courseagenda .mag-agenda_activity-info > div {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    align-items: center;
+}
+
+.path-report-courseagenda .mag-detailed_info-btn {
+    display: flex;
+    grid-column: span 2 / span 2;
+    justify-content: center;
+    align-items: center;
+    font-size: 17px;
+    color: #2c2c2c;
+}
+
+.path-report-courseagenda .mag-detailed_completion-status {
+    display: grid;
+    grid-column: span 5 / span 5;
+    padding-left: 35px;
+}
+
+.path-report-courseagenda .mag-detailed_Weighting-grading-method {
+    display: flex;
+    margin-top: 20px;
+    position: relative;
+    top: -15px;
+
+
+}
+
+.path-report-courseagenda .mag-detailed_info-text {
+    display: inline;
+    grid-column: span 5 / span 5;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding-right: 20px;
+
+}
+
+.path-report-courseagenda .mag-detailed_info-text i {
+
+    font-size: 18px;
+    margin-right: 10px;
+
+}
+
+.path-report-courseagenda .mag-detailed_info-text p,
+.path-report-courseagenda .mag-detailed_icon-see-activity p {
+    font-size: 0.875rem;
+
+    color: #818181;
+}
+
+.path-report-courseagenda .mag-detailed_info-text-status {
+
+    font-weight: bold;
+    color: #818181;
+    font-size: 25px;
+    margin-top: 30px;
+}
+
+.path-report-courseagenda .mag-detailed_icon-see-activity {
+    text-align: center;
+    line-height: 0%;
+}
+
+.path-report-courseagenda .mag-detailed_icon-see-activity:hover {
+    font-size: 20px;
+}
+
+.path-report-courseagenda .mag-info_icon-more-time {
+    display: inline-block;
+    transform: rotateY(180deg);
+}
+
+.path-report-courseagenda .mag-detailed_completion-lists {
+
+    line-height: 25px;
+}
+
+.path-report-courseagenda .mag-detailed_completion-lists span {
+    color: #818181;
+
+}
+
+.path-report-courseagenda .mag-detailed_container-list span {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+
+}
+
+
+.path-report-courseagenda .mag-detailed_container-list i {
+    margin-right: 5px;
+
+
+}
+
+.path-report-courseagenda .mag-detailed_container-list {
+    color: #818181;
+    font-weight: normal;
+}
+
+
+.path-report-courseagenda .mag-detailed_icon-list-x {
+    color: #d04961;
+}
+
+.path-report-courseagenda .mag-detailed_icon-list-check {
+    color: #50b447;
+}
+
+.path-report-courseagenda .mag-detailed_info-icon {
+    padding: 10px;
+    color: #2c2c2c;
+}
+
+.path-report-courseagenda .mag-detailed_info-text > div {
+    display: flex;
+    align-items: center;
+
+}
+
+
+/*Icon Lock*/
+.path-report-courseagenda .mag-detailed_lock-icon {
+    color: #328094;
+}
+
+/*Text lock*/
+.path-report-courseagenda .mag-detailed_text-lock {
+    color: #328094;
+    font-weight: normal;
+
+}
+
+/*span lock*/
+.path-report-courseagenda .mag-detailed_text-lock span {
+    font-weight: 750;
+
+}
+
+/*Line section*/
+.path-report-courseagenda .mag-section_line {
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+}
+
+/*Restriction activity*/
+.path-report-courseagenda .mag-detailed_restriction-blocked {
+    color: red;
+}
+
+/*State Blocked*/
+.path-report-courseagenda .mag-state-blocked {
+
+    border: solid 1px #969696;
+    color: #444;
+    background: #e7e7e7;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+@media (min-width: 1024px) {
+
+    .path-report-courseagenda .mag-activity_qualified-approved:hover .mag-activity_content,
+    .path-report-courseagenda .mag-activity_qualified-failed:hover .mag-activity_content,
+    .path-report-courseagenda .mag-activity-pending:hover .mag-activity_content,
+    .path-report-courseagenda .mag-activity-delivered:hover .mag-activity_content,
+    .path-report-courseagenda .mag-activity-retarded:hover .mag-activity_content,
+    .path-report-courseagenda .mag-activity-blocked:hover .mag-activity_content {
+        align-items: center;
+        padding-left: 70px;
+
+    }
+
+    .path-report-courseagenda .mag-activity_border-text {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 100%;
+        overflow: hidden;
+        color: white;
+        transition: width 0.5s ease, padding 0.5s ease-out;
+    }
+
+    .path-report-courseagenda .mag-activity_border-text span {
+        display: block;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+
+    .path-report-courseagenda .mag-border_span-text {
+        font-weight: 400;
+        font-size: 14px;
+    }
+
+    .path-report-courseagenda .mag-border_span-porcent {
+        font-size: 16px;
+    }
+
+    .path-report-courseagenda .mag-activity_qualified-approved:hover .mag-activity_border-text span,
+    .path-report-courseagenda .mag-activity_qualified-failed:hover .mag-activity_border-text span,
+    .path-report-courseagenda .mag-activity-pending:hover .mag-activity_border-text span,
+    .path-report-courseagenda .mag-activity-delivered:hover .mag-activity_border-text span,
+    .path-report-courseagenda .mag-activity-retarded:hover .mag-activity_border-text span,
+    .path-report-courseagenda .mag-activity-blocked:hover .mag-activity_border-text span {
+        opacity: 1;
+    }
+
+    .path-report-courseagenda .mag-activity_qualified-approved:hover .mag-activity_border-text,
+    .path-report-courseagenda .mag-activity_qualified-failed:hover .mag-activity_border-text,
+    .path-report-courseagenda .mag-activity-pending:hover .mag-activity_border-text,
+    .path-report-courseagenda .mag-activity-delivered:hover .mag-activity_border-text,
+    .path-report-courseagenda .mag-activity-retarded:hover .mag-activity_border-text,
+    .path-report-courseagenda .mag-activity-blocked:hover .mag-activity_border-text {
+        padding-left: 8px;
+        padding-right: 8px;
+        width: 55px;
+    }
+
+}
+
+@media (max-width: 1300px) {
+    .path-report-courseagenda .mag-detailed_completion-status {
+        padding-left: 0;
+    }
+}
+
+@media (max-width: 1024px) {
+
+    .path-report-courseagenda .mag-header_info-text,
+    .path-report-courseagenda .mag-header_info-date p {
+        margin-left: 20px;
+    }
+
+
+    .path-report-courseagenda .mag-section_unit {
+        grid-column: span 12 / span 12;
+    }
+
+    .path-report-courseagenda .mag-section_activity {
+        margin-top: 20px;
+        grid-column: span 12 / span 12;
+    }
+
+    .path-report-courseagenda .mag-section_activity > div {
+        margin-right: 0;
+    }
+
+    .path-report-courseagenda .mag-section_activity {
+        margin-left: 0;
+    }
+
+    .path-report-courseagenda .mag-border_span-text,
+    .path-report-courseagenda .mag-border_span-porcent {
+        display: none;
+    }
+
+    .path-report-courseagenda .mag-section_unit {
+        display: table-column-group;
+        background-color: #328094;
+    }
+
+    .path-report-courseagenda .mag-unit_content-text span {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .path-report-courseagenda .mag-section_unit-moudle,
+    .path-report-courseagenda .mag-section_unit-title {
+        font-size: 19px;
+    }
+
+    .path-report-courseagenda .mag-section_unit-date {
+        font-size: 15px;
+    }
+
+    .path-report-courseagenda .mag-unit_content-text {
+        text-align: center;
+        padding: 15px;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .path-report-courseagenda .mag-unit_content-text p {
+        color: white;
+    }
+
+    .path-report-courseagenda .mag-unit-bloqued {
+        opacity: 1;
+    }
+
+    .path-report-courseagenda .mag-unit-bloqued {
+        background-color: #efefef;
+    }
+
+    .path-report-courseagenda .mag-unit-bloqued p {
+        color: #000;
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .path-report-courseagenda .mag-container_icons-show-more {
+        padding: 4px;
+    }
+
+    .path-report-courseagenda .mag-detailed_completion-status {
+        grid-column: span 12 / span 12;
+    }
+
+    .path-report-courseagenda .mag-detailed_info-btn {
+        grid-column: span 12 / span 12;
+        justify-content: end;
+    }
+
+    .path-report-courseagenda .mag-detailed_info-text {
+        grid-column: span 12 / span 12;
+        color: #818181;
+    }
+
+    .path-report-courseagenda .mag-name_content-icon {
+        margin-right: 0;
+    }
+
+    .path-report-courseagenda .mag-activity_name-text {
+        font-size: 15px;
+    }
+
+    .path-report-courseagenda .mag-date_content-span,
+    .path-report-courseagenda .mag-activity_content-date > p {
+        font-size: 14px;
+        line-height: 1rem;
+    }
+
+    .path-report-courseagenda .mag-activity_content {
+        padding-left: 0;
+    }
+
+    .path-report-courseagenda .mag-activity_state-mobile {
+        display: block;
+        justify-content: end;
+        text-align: center;
+    }
+
+    .path-report-courseagenda .mag-activity_content-name {
+        grid-column: span 10 / span 10;
+    }
+
+    .path-report-courseagenda .mag-activity_content-date {
+        grid-column: span 10 / span 10;
+    }
+
+    .path-report-courseagenda .mag-activity_content-icon {
+        display: flex;
+        grid-column: span 2 / span 2;
+        justify-content: center;
+        align-items: center;
+    }
+
+
+    .path-report-courseagenda .mag-activity_state-mobile {
+        display: grid;
+        grid-column: span 2 / span 2;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .path-report-courseagenda .mag-activity_content-qualification {
+        padding: 0 35px;
+    }
+
+    .path-report-courseagenda .mag-activity_content-date {
+        margin-right: 0;
+    }
+
+    .path-report-courseagenda .mag-activity_content-state {
+        display: none;
+    }
+
+}
+
+@media (max-width: 640px) {
+
+    .path-report-courseagenda .mag-header_info-course {
+        display: flex;
+        grid-column: span 12 / span 12;
+        padding: 5px 0 0 0;
+    }
+
+
+    .path-report-courseagenda .mag-header_info-date {
+        display: flex;
+        grid-column: span 12 / span 12;
+        justify-content: right;
+        margin-right: 10px;
+        padding: 0 0 10px 0;
+    }
+
+
+    .path-report-courseagenda .mag-header_info-text,
+    .path-report-courseagenda .mag-header_info-date p {
+        margin-left: 10px;
+    }
+
+    .path-report-courseagenda .mag-activity_state-mobile {
+        grid-column: span 3 / span 3;
+        justify-content: left;
+    }
+
+    .path-report-courseagenda .mag-activity_content-name {
+        grid-column: span 9 / span 9;
+    }
+
+    .path-report-courseagenda .mag-name_content-icon > i {
+        display: none;
+    }
+}
+
+@media (max-width: 400px) {
+    .path-report-courseagenda .mag-detailed_Weighting-grading-method {
+        display: block;
+
+    }
+
+    .path-report-courseagenda .mag-detailed_grading-method {
+        width: 160px;
+        max-width: 160px;
+        margin-left: 0;
+        margin-top: 10px;
+    }
+
+    .path-report-courseagenda .mag-activity_state {
+        width: 5rem;
+        font-size: 0.775rem;
+    }
+
+    .path-report-courseagenda .mag-activity_state-mobile {
+        grid-column: span 4 / span 4;
+        justify-content: left;
+    }
+
+    .path-report-courseagenda .mag-activity_content-name {
+        grid-column: span 8 / span 8;
+    }
+
+}

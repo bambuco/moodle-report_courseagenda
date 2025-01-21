@@ -1,0 +1,52 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template report_courseagenda/agenda
+
+    TODO describe template agenda
+
+    Example context (json):
+    {
+    }
+}}
+<div class="mag-container_agenda">
+    <div class="mag-header">
+        <div class="mag-header_info-course">
+
+            <div class="mag-header_info-text">
+                <p class="mag-info-header">
+                    {{{reportsummary}}}
+                </p>
+            </div>
+        </div>
+        <div class="mag-header_info-date">
+
+            {{#showprogress}}
+            <div class="mag-header_info-progress">
+                <svg class="mag-progress-circle" width="80" height="80">
+                    <circle cx="40" cy="40" r="35" stroke="#E6E6E6" stroke-width="8" fill="none"></circle>
+                    <circle id="mag-progress-indicator" cx="40" cy="40" r="35" stroke="#4caf50" stroke-width="8"
+                        fill="none" stroke-dasharray="219.91" stroke-dashoffset="219.91" stroke-linecap="round"
+                        style="stroke-dashoffset: {{strokedashoffset}}px; stroke: {{progresscolors}};">
+                    </circle>
+                </svg>
+                <span id="mag-progress-text">{{progress}}%</span>
+            </div>
+            {{/showprogress}}
+        </div>
+    </div>
+</div>
