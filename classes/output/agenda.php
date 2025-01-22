@@ -19,8 +19,8 @@ namespace report_courseagenda\output;
 use renderable;
 use renderer_base;
 use templatable;
-use \context_course;
-use \report_courseagenda\local\controller;
+use context_course;
+use report_courseagenda\local\controller;
 
 /**
  * Class agenda
@@ -45,6 +45,7 @@ class agenda implements renderable, templatable {
      * Constructor
      *
      * @param \stdClass $course The course object
+     * @param \stdClass $user The user object
      */
     public function __construct(\stdClass $course, \stdClass $user) {
         $this->course = $course;
@@ -110,6 +111,8 @@ class agenda implements renderable, templatable {
             $progresscolor = controller::get_progress_color($progress);
         }
 
+        $coursesections = controller::get_course_sections($course, $this->user);
+
         $defaultvariables = [
             'baseurl' => $CFG->wwwroot,
             'course' => $course,
@@ -118,6 +121,7 @@ class agenda implements renderable, templatable {
             'progress' => $progress,
             'strokedashoffset' => $strokedashoffset,
             'progresscolors' => $progresscolor,
+            'coursesections' => $coursesections,
         ];
 
         return $defaultvariables;

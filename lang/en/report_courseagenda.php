@@ -59,7 +59,18 @@ Use the format: <b>color|percentage</b> (one per line).<br>
 Example:<br>#ff0000|33<br>#ffe600|66<br>#00ff00<br>';
 $string['statesoptions'] = 'States options';
 $string['statesoptions_help'] = 'Select the colors and icons to use in the resources states.
-Use the format: <b>color|state|icon</b> (one per line).<br>
+Use the format: <b>state|color|icon</b> (one per line).<br>
 For the icons list see: <a href="https://componentlibrary.moodle.com/admin/tool/componentlibrary/docspage.php/moodle/components/moodle-icons/" target="_blank">Moodle icons</a><br>
-<b>Available states:</b> bloqued, pending, completed, approved, failed, missing.<br>
-Example:<br>#FF0000|failed<br>#ffe600|pending|tool_policy:pending<br>#00FF00|approved|core:t/approve<br>';
+<b>Available states:</b> blocked, pending, completed, approved, failed, delivered, undelivered, retarded.<br>
+Example:<br>failed|#FF0000<br>pending|#ffe600|tool_policy:pending<br>approved|#00FF00|core:t/approve<br>';
+$string['allactivities'] = 'All activities';
+$string['weightedactivities'] = 'Weighted activities';
+$string['notweightedactivities'] = 'Not weighted activities';
+$string['state_blocked'] = 'Blocked';
+$string['state_pending'] = 'Pending';
+$string['state_completed'] = 'Completed';
+$string['state_approved'] = 'Approved';
+$string['state_failed'] = 'Failed';
+$string['state_delivered'] = 'Delivered';
+$string['state_undelivered'] = 'Undelivered';
+$string['state_retarded'] = 'Retarded';

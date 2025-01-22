@@ -47,6 +47,9 @@ if ($ADMIN->fulltree) {
         $modules[$k] = get_string('pluginname', $k);
     }
 
+    // Sort modules by the module name considering locale.
+    uasort($modules, 'strcoll');
+
     // General settings.
     $name = 'report_courseagenda/settingsgeneralheader';
     $heading = get_string('settingsgeneralheader', 'report_courseagenda');

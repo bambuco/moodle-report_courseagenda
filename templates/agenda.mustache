@@ -49,4 +49,158 @@
             {{/showprogress}}
         </div>
     </div>
+    <div class="mag-agenda_content">
+        <div class="mag-agenda-filters">
+            <select class="mag-select-activity">
+                <option value="all">{{#str}}allactivities, report_courseagenda{{/str}}</option>
+                <option value="weighted">{{#str}}weightedactivities, report_courseagenda{{/str}}</option>
+                <option value="notweighted">{{#str}}notweightedactivities, report_courseagenda{{/str}}</option>
+            </select>
+        </div>
+        {{#coursesections}}
+        <section class="{{#blocked}}mag-section-bloqued{{/blocked}}">
+            <div class="mag-section_unit">
+                <div class="mag-unit_content-text">
+                    <span>
+                        <p class="mag-section_unit-moudle">{{orderlabel}}</p>
+                        <p class="mag-section_unit-title"> {{name}}</p>
+                    </span>
+                    <p class="mag-section_unit-date">{{{availablemessage}}}</p>
+                </div>
+
+            </div>
+            <div class="mag-section_activity">
+                {{#activities}}
+                    <div class="mag-activity_{{state}}" onclick="toggleInfo(event, this)">
+                        <div class="mag-activity_border-text mag-weighing">
+                            <span class="mag-border_span-porcent">10%</span>
+                            <span class="mag-border_span-text">ponderado</span>
+                        </div>
+                        <div class="mag-activity_content">
+
+                            <!-- Activity Name -->
+                            <div class="mag-activity_content-name">
+                                <div>
+                                    <div class="mag-name_content-icon">
+                                        {{{stateicon}}}
+                                    </div>
+                                    <div class="mag-activity_name-text">
+                                        {{instancename}}
+                                        <span class="mag-activity_name-span">
+                                            Actividad aprobada
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- End of Activity Name -->
+                            <!-- Grade or Status Mobile -->
+                            <div class="mag-activity_state-mobile">
+                                <a href="https://virtual.ucatolicaluisamigo.edu.co/campus/grade/report/grader/index.php?id=24154"
+                                    target="_blank">
+                                    <div class="mag-activity_content-qualification mag-qualification">
+                                        4,2 <i class="fa-solid fa-up-right-from-square mag-qualification_icon"></i>
+                                    </div>
+                                </a>
+                            </div>
+                            <!-- End of Grade or Status Mobile -->
+
+                            <!-- Dates -->
+                            <div class="mag-activity_content-date">
+                                <p>
+                                    Calificada el <span class="mag-date_content-span">14 de septiembre de 2024</span>
+
+                                </p>
+                            </div>
+                            <!-- End of Dates -->
+
+                            <!-- Grade or Status -->
+                            <div class="mag-activity_content-state">
+                                <a href="https://virtual.ucatolicaluisamigo.edu.co/campus/grade/report/grader/index.php?id=24154"
+                                    target="_blank">
+                                    <div class="mag-activity_content-qualification mag-approved-qualification">
+                                        4,2 <i class="fa-solid fa-up-right-from-square mag-qualification_icon"></i>
+                                    </div>
+                                </a>
+                            </div>
+                            <!-- End of Grade or Status -->
+
+                            <!-- Icon: Arrow Up-Down -->
+                            <div class="mag-activity_content-icon">
+                                <div class="mag-container_icons-show-more">
+                                    <i class="fa-solid fa-angles-down"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Activity Information -->
+                        <div class="mag-agenda_activity-info">
+                            <div>
+                                <div class="mag-detailed_completion-status">
+                                    <div class="mag-detailed_Weighting-grading-method">
+                                        <div
+                                            class="mag-agenda_activity_weighting-detailed mag-detailedWeighting_qualified">
+                                            Ponderación <span>10%</span>
+                                        </div>
+                                        <div class="mag-detailed_grading-method">
+                                            Calificación con rúbrica
+                                        </div>
+                                    </div>
+                                    <div class="mag-detailed_completion-lists">
+                                        <div class="mag-detailed_container-list">
+                                            <span>
+                                                <i></i>
+                                                Fecha límite de entrega: &nbsp;<b>30/08/2024 23:00</b></span>
+                                            <span>
+                                                <i></i>
+                                                Retroalimentación: &nbsp;<b>14 de septiembre de 2024</b> </span>
+                                            <span>
+                                                <i></i>
+                                                Tipo de actividad: &nbsp;<b>Foro</b> </span>
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mag-detailed_info-text">
+                                    <div class="mag-detailed_info-text-status">
+                                        <p> Estado de finalización de actividad:</p>
+                                    </div>
+                                    <div class="mag-detailed_completion-lists">
+                                        <div class="mag-detailed_container-list">
+                                            <span>
+                                                <i class="fa-solid fa-check mag-detailed_icon-list-check"></i>
+                                                El estudiante debe entregar esta actividad para completarla</span>
+                                            <span>
+                                                <i class="fa-solid fa-check mag-detailed_icon-list-check"></i>
+                                                El estudiante debe ver esta actividad para finalizarla</span>
+
+                                        </div>
+                                    </div>
+                                    <div class="mag-section_line"></div>
+                                    <br>
+                                    <div>
+                                        <i class="fa-solid fa-unlock mag-detailed_lock-icon"></i>
+                                        <div class="mag-detailed_text-lock">
+                                            La actividad tuvo una ampliación de plazo de <span> 3 días </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mag-detailed_info-btn">
+                                    <a href="https://virtual.ucatolicaluisamigo.edu.co/campus/mod/assign/view.php?id=739505"
+                                        target="_blank">
+                                        <div class="mag-detailed_info-icon">
+                                            <div class="mag-detailed_icon-see-activity">
+                                                <i class="fa-solid fa-arrow-right"></i>
+                                                <p>Ver actividad</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {{/activities}}
+            </div>
+        </section>
+        {{/coursesections}}
+    </div>
 </div>

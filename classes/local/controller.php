@@ -36,6 +36,50 @@ class controller {
     public const COURSEDURATION_WEEKS = 2;
 
     /**
+     * @var string State blocked.
+     */
+    public const STATE_BLOCKED = 'blocked';
+
+    /**
+     * @var string State pending.
+     */
+    public const STATE_PENDING = 'pending';
+
+    /**
+     * @var string State completed.
+     */
+    public const STATE_COMPLETED = 'completed';
+
+    /**
+     * Completed without a grade.
+     *
+     * @var string State delivered.
+     */
+    public const STATE_DELIVERED = 'delivered';
+
+    /**
+     * @var string State approved.
+     */
+    public const STATE_APPROVED = 'approved';
+
+    /**
+     * @var string State failed.
+     */
+    public const STATE_FAILED = 'failed';
+
+    /**
+     * @var string State undelivered.
+     */
+    public const STATE_UNDELIVERED = 'undelivered';
+
+    /**
+     * Undelivered but still deliverable.
+     *
+     * @var string State retarded.
+     */
+    public const STATE_RETARDED = 'retarded';
+
+    /**
      * Return the course teachers in a formated string.
      *
      * @param int $courseid The course id.
@@ -203,5 +247,242 @@ class controller {
         }
 
         return '#50b447';
+    }
+
+    /**
+     * Return the state options.
+     *
+     * @return array The state options.
+     */
+    private static function get_state_options(): array {
+        global $OUTPUT;
+
+        static $loaded = false;
+
+        static $list = [
+            self::STATE_APPROVED => [
+                'icon' => 'core:t/approve',
+                'color' => '#50b447',
+            ],
+            self::STATE_BLOCKED => [
+                'icon' => 'core:t/locked',
+                'color' => '#3f3f3f',
+            ],
+            self::STATE_COMPLETED => [
+                'icon' => 'core:i/overriden_grade',
+                'color' => '#3593ab',
+            ],
+            self::STATE_DELIVERED => [
+                'icon' => 'tool_policy:pending',
+                'color' => '#3593ab',
+            ],
+            self::STATE_FAILED => [
+                'icon' => 'core:i/gradingnotifications',
+                'color' => '#d04961',
+            ],
+            self::STATE_PENDING => [
+                'icon' => 'tool_policy:pending',
+                'color' => '#e09523',
+            ],
+            self::STATE_RETARDED => [
+                'icon' => 'core:e/cancel_solid_circle',
+                'color' => '#d04961',
+            ],
+            self::STATE_UNDELIVERED => [
+                'icon' => 'core:i/unlock',
+                'color' => '#d04961',
+            ],
+        ];
+
+        if (!$loaded) {
+            $loaded = true;
+
+            $statesoptions = get_config('report_courseagenda', 'statesoptions');
+            $statesoptions = trim($statesoptions);
+            if (!empty($statesoptions)) {
+                $statesoptions = explode("\n", $statesoptions);
+                $arraystates = array_keys($list);
+                foreach ($statesoptions as $option) {
+                    $option = explode('|', $option);
+                    $option = array_map('trim', $option);
+
+                    if (!in_array($option[0], $arraystates)) {
+                        continue;
+                    }
+
+                    if (count($option) >= 2) {
+                        $list[$option[0]]['color'] = $option[1];
+                    }
+
+                    if (count($option) == 3) {
+                        $list[$option[0]]['icon'] = $option[2];
+                    }
+                }
+            }
+
+            foreach ($list as $state => $data) {
+                $list[$state]['iconhtml'] = '';
+
+                if (!empty($data['icon'])) {
+                    $iconsource = explode(':', $data['icon']);
+
+                    if (count($iconsource) !== 2) {
+                        continue;
+                    }
+
+                    // Mdlcode assume: $state ['blocked', 'pending', 'completed', 'approved', 'failed', 'delivered', 'undelivered', 'retarded']
+                    $title = get_string('state_' . $state, 'report_courseagenda');
+                    $list[$state]['iconhtml'] = $OUTPUT->pix_icon($iconsource[1], $title, $iconsource[0]);
+                }
+            }
+        }
+
+        return $list;
+    }
+
+    /**
+     * Return the state icon in HTML code.
+     *
+     * @param string $state The state.
+     * @return string The state icon in HTML code.
+     */
+    public static function get_state_iconhtml(string $state): string {
+
+        $list = self::get_state_options();
+
+        if (!isset($list[$state]) || !isset($list[$state]['iconhtml'])) {
+            return '';
+        }
+
+        return $list[$state]['iconhtml'];
+    }
+
+    /**
+     * Return the course sections.
+     *
+     * @param mixed $course A course object or the course id.
+     * @param stdClass $user The user object.
+     * @return array The course sections.
+     */
+    public static function get_course_sections($course, $user): array {
+        global $DB, $USER, $OUTPUT;
+
+        if (is_numeric($course)) {
+            $course = $DB->get_record('course', ['id' => $course], '*', MUST_EXIST);
+        }
+
+        $modinfo = get_fast_modinfo($course);
+        $coursesections = $modinfo->get_section_info_all();
+
+        $context = \context_course::instance($course->id);
+        $courseformat = course_get_format($course->id);
+        $course = $courseformat->get_course();
+        $hiddensections = property_exists($course, 'hiddensections') && $course->hiddensections != 1;
+
+        if (!$hiddensections) {
+            $hiddensections = has_capability('moodle/course:viewhiddensections', $context, $USER);
+        }
+
+        $reportconfig = get_config('report_courseagenda');
+        $includesection0 = $reportconfig->includesection0;
+
+        $sections = [];
+        foreach ($coursesections as $coursesection) {
+
+            if (!$includesection0 && $coursesection->section == 0) {
+                continue;
+            }
+
+            if (!$coursesection->visible && !$hiddensections) {
+                continue;
+            }
+            $section = new \stdClass();
+
+            // Check the availability by date.
+            $availabilityclass = $courseformat->get_output_classname('content\\section\\availability');
+            $availability = new $availabilityclass($courseformat, $coursesection);
+            $availabledata = $availability->export_for_template($OUTPUT);
+
+            if ($availabledata->hasavailability) {
+                $section->availablemessage = $OUTPUT->render($availability);
+            } else if (!$coursesection->available) {
+                // Section is not available and the availability is hidden.
+                continue;
+            }
+
+            $section->blocked = !$coursesection->uservisible;
+
+            $section->order = $coursesection->section;
+            $section->orderlabel = $courseformat->get_default_section_name($coursesection);
+
+            // Format general values.
+            if (!empty($section->name)) {
+                $section->name = format_string($coursesection->name, true, ['context' => $context]);
+            } else {
+                $section->name = $courseformat->get_section_name($coursesection);
+                if ($section->orderlabel == $section->name) {
+                    $section->name = '';
+                }
+            }
+
+            // Load activities from the modules.
+            $section->activities = [];
+            if (!empty($coursesection->sequence)) {
+                // Casting $course->modinfo to string prevents one notice when the field is null.
+                $modinfo = $courseformat->get_modinfo();
+
+                $sectionmods = explode(",", $coursesection->sequence);
+
+                $completioninfo = new \completion_info($course);
+
+                $excludemodules = $reportconfig->excludemodules;
+                $excludemodules = explode(',', $excludemodules);
+
+                foreach ($sectionmods as $modnumber) {
+
+                    if (empty($modinfo->cms[$modnumber])) {
+                        continue;
+                    }
+
+                    $mod = $modinfo->cms[$modnumber];
+
+                    if (in_array($mod->modname, $excludemodules)) {
+                        continue;
+                    }
+
+                    $cmdata = new \stdClass();
+                    $cmdata->instancename = format_string($modinfo->cms[$modnumber]->name, true, $course->id);
+                    $cmdata->uniqueid = 'cm_' . $mod->id . '_' . time() . '_' . rand(0, 1000);
+                    $cmdata->url = $mod->url;
+                    $cmdata->hascompletion = false;
+                    $cmdata->state = 'pending';
+                    $cmdata->enabled = $completioninfo->is_enabled($mod);
+
+                    if ($mod->available == 0) {
+                        $cmdata->state = 'blocked';
+                    }
+
+                    $displayoptions = [];
+                    //$cm = new \cm_base($courseformat, $coursesection, $mod, $displayoptions);
+
+                    if ($completioninfo->is_enabled($mod) !== COMPLETION_TRACKING_NONE) {
+                        $cmdata->hascompletion = true;
+                        $cmdata->completed = $DB->get_record('course_modules_completion',
+                                                    ['coursemoduleid' => $mod->id, 'userid' => $user->id, 'completionstate' => 1]);
+
+                        $cmdata->showcompletionconditions = $course->showcompletionconditions == COMPLETION_SHOW_CONDITIONS;
+
+                    }
+
+                    $cmdata->stateicon = self::get_state_iconhtml($cmdata->state);
+
+                    $section->activities[] = $cmdata;
+                }
+            }
+
+            $sections[] = $section;
+        }
+
+        return $sections;
     }
 }

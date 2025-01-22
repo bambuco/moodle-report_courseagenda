@@ -31,4 +31,38 @@ import $ from 'jquery';
  */
 export const init = () => {
 
+    $('.mag-section_unit').on('click', function(e) {
+
+        var $moduleUnit = $(this);
+
+        if (!$moduleUnit.hasClass('mag-unit-bloqued')) {
+            return;
+        }
+
+        const $conditionsInfo = $moduleUnit.find('.mag-unit_conditions-info');
+
+        if ($moduleUnit.hasClass('active')) {
+            $moduleUnit.removeClass('active');
+            $conditionsInfo.css('max-height', '0');
+        } else {
+            closeAllModules();
+            $moduleUnit.addClass('active');
+            $conditionsInfo.css('max-height', $conditionsInfo[0].scrollHeight + 'px');
+        }
+
+        e.stopPropagation();
+        e.preventDefault();
+    });
 };
+
+/**
+ * Close all modules.
+ */
+function closeAllModules() {
+    const allModuleUnits = document.querySelectorAll('.mag-unit-bloqued');
+    allModuleUnits.forEach(moduleUnit => {
+        const conditionsInfo = moduleUnit.querySelector('.mag-unit_conditions-info');
+        moduleUnit.classList.remove('active');
+        conditionsInfo.style.maxHeight = '0';
+    });
+}

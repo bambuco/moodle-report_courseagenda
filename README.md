@@ -1,6 +1,6 @@
 # Report Course agenda
 
-This report allows a quick view of the details of the activities in the course along with their current status.
+This report allows a quick view of the activities details in the course along with their current status.
 
 Package tested in: moodle 4.3+, 4.5+.
 

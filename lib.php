@@ -22,8 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- defined('MOODLE_INTERNAL') || die;
-
 /**
  * This function extends the navigation with the report items
  *
@@ -41,8 +39,6 @@ function report_courseagenda_extend_navigation_course($navigation, $course, $con
 
 /**
  * Is current user allowed to access this report
- *
- * @private defined in lib.php for performance reasons
  *
  * @param stdClass $user
  * @param stdClass $course
