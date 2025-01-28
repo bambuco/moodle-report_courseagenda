@@ -84,7 +84,6 @@
     font-weight: bold;
     color: #476873;
     border-bottom: 1px solid #d8d8d8;
-
 }
 
 .path-report-courseagenda .mag-header_info-text span {
@@ -97,7 +96,6 @@
     color: #6d6f6d;
 }
 
-/* This is where the header CSS ends (excluding responsive design) */
 .path-report-courseagenda .mag-agenda_content > section {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -260,7 +258,6 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    /* top and bottom | left and right */
     padding: 0.25rem 0.75rem;
     margin-right: 0.75rem;
     border-radius: 0.25rem;
@@ -278,22 +275,16 @@
     text-decoration: none;
 }
 
-/*block of information for each section*/
 .path-report-courseagenda .mag-agenda_activity-info {
-    display: none;
     overflow: hidden;
-    /* top and bottom | left and right */
     height: 0;
-    /*Block size info*/
-    padding: 0.30% 0%;
     background-color: #fff;
-    border-top: 1px solid #d8d8d8;
-    transition: height 0.3s ease-out;
+    transition: height 0.3s ease-in-out;
 }
 
 .path-report-courseagenda .mag-section_activity > div.active .mag-agenda_activity-info {
-    display: inline-block;
-    height: auto;
+    padding: 0.30% 0%;
+    border-top: 1px solid #d8d8d8;
 }
 
 .path-report-courseagenda .mag-activity_approved {
@@ -354,7 +345,6 @@
     font-weight: bolder;
 }
 
-/* It is part of the hover that only goes up to 1024px, but it is extracted from the media query to reuse its "bg" property */
 .path-report-courseagenda .mag-activity_approved .mag-weighing,
 .path-report-courseagenda .mag-activity_approved .mag-detailedWeighting {
     background-color: #50b447;
@@ -394,6 +384,7 @@
 
 .path-report-courseagenda .mag-name_content-icon {
     margin-right: 0.5rem;
+    color: #9c27b0;
 }
 
 .path-report-courseagenda .mag-name_content-icon > i {
@@ -402,25 +393,12 @@
     font-size: 22px;
 }
 
-.path-report-courseagenda .mag-activity_approved.qualified .mag-activity_icon {
-    color: #50b447;
-}
-
-.path-report-courseagenda .mag-activity_pending .mag-activity_icon {
-    color: #e09523;
-}
-
-.path-report-courseagenda .mag-activity_delivered .mag-activity_icon {
-    color: #3593ab;
-}
-
-.path-report-courseagenda .mag-activity_retarded .mag-activity_icon,
-.path-report-courseagenda .mag-activity_failed.qualified .mag-activity_icon {
-    color: #d04961;
-}
-
-.path-report-courseagenda .mag-activity_blocked .mag-activity_icon {
-    color: #3f3f3f;
+.path-report-courseagenda .mag-activity_name-span {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 1rem;
+    color: #9c27b0;
 }
 
 .path-report-courseagenda .mag-activity_name-text {
@@ -431,29 +409,35 @@
     color: #2c2c2c;
 }
 
-.path-report-courseagenda .mag-activity_name-span {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 400;
-    line-height: 1rem;
-    color: #6d6f6d;
-}
-
-.path-report-courseagenda .mag-activity_pending .mag-activity_name-span {
-    color: #e09523;
-}
-
-.path-report-courseagenda .mag-activity_approved .mag-activity_name-span {
+.path-report-courseagenda .mag-activity_approved .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_approved .mag-name_content-icon {
     color: #50b447;
 }
 
-.path-report-courseagenda .mag-activity_delivered .mag-span {
-    color: #328094;
+.path-report-courseagenda .mag-activity_undelivered .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_undelivered .mag-name_content-icon,
+.path-report-courseagenda .mag-activity_pending .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_pending .mag-name_content-icon {
+    color: #e09523;
 }
 
-.path-report-courseagenda .mag-activity_retarded .mag-span,
-.path-report-courseagenda .mag-activity_failed .mag-activity_name-span {
+.path-report-courseagenda .mag-activity_completed .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_completed .mag-name_content-icon,
+.path-report-courseagenda .mag-activity_delivered .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_delivered .mag-name_content-icon {
+    color: #3593ab;
+}
+
+.path-report-courseagenda .mag-activity_retarded .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_failed .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_retarded .mag-name_content-icon,
+.path-report-courseagenda .mag-activity_failed.qualified .mag-name_content-icon {
     color: #d04961;
+}
+
+.path-report-courseagenda .mag-activity_blocked .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_blocked .mag-name_content-icon {
+    color: #3f3f3f;
 }
 
 .path-report-courseagenda .mag-activity_content-date {
@@ -476,7 +460,7 @@
     justify-content: center;
 }
 
-.path-report-courseagenda .mag-date_content-span {
+.path-report-courseagenda .mag-activity_content-date span {
     font-weight: 400;
     line-height: 1.5rem;
     color: #404040;
@@ -517,40 +501,38 @@
     color: #50b447;
 }
 
-.path-report-courseagenda .mag-activity_state {
+.path-report-courseagenda .mag-state {
     width: 6rem;
     padding-top: 2px;
     padding-bottom: 2px;
     border-radius: 0.25rem;
-    font-size: 0.875rem;
-    font-weight: 400;
     line-height: 1.25rem;
+    font-weight: bold;
+    font-size: 13px;
 }
 
 .path-report-courseagenda .mag-activity_pending .mag-state {
     border: solid 1px #ffd89e;
     color: #e09523;
     background: #fff6e8;
-    font-weight: bold;
-    font-size: 13px;
 }
-
 
 .path-report-courseagenda .mag-activity_delivered .mag-state {
     background: #dcf9ff;
     border: solid 1px #6bbed3;
     color: #3593ab;
-    font-weight: bold;
-    font-size: 13px;
 }
 
 .path-report-courseagenda .mag-activity_retarded .mag-state {
     background: #fff0f3;
     border: solid 1px #ffc4cd;
     color: #d04961;
-    font-weight: bold;
-    font-size: 13px;
+}
 
+.path-report-courseagenda .mag-activity_blocked .mag-state {
+    border: solid 1px #969696;
+    color: #444;
+    background: #e7e7e7;
 }
 
 .path-report-courseagenda .mag-teacher_state-qualified {
@@ -564,7 +546,6 @@
     grid-column: span 3 / span 3;
     align-items: center;
     justify-content: end;
-    /* top | right | bottom | left */
     padding: 0.75rem 0.75rem 0.75rem 0.75rem;
 }
 
@@ -573,7 +554,6 @@
     justify-content: center;
     align-items: center;
 }
-
 
 .path-report-courseagenda .mag-container_icons-show-more {
     line-height: 0%;
@@ -605,8 +585,6 @@
     margin-top: 20px;
     position: relative;
     top: -15px;
-
-
 }
 
 .path-report-courseagenda .mag-detailed_info-text {
@@ -615,25 +593,20 @@
     font-size: 0.875rem;
     line-height: 1.25rem;
     padding-right: 20px;
-
 }
 
 .path-report-courseagenda .mag-detailed_info-text i {
-
     font-size: 18px;
     margin-right: 10px;
-
 }
 
 .path-report-courseagenda .mag-detailed_info-text p,
 .path-report-courseagenda .mag-detailed_icon-see-activity p {
     font-size: 0.875rem;
-
     color: #818181;
 }
 
 .path-report-courseagenda .mag-detailed_info-text-status {
-
     font-weight: bold;
     color: #818181;
     font-size: 25px;
@@ -655,34 +628,27 @@
 }
 
 .path-report-courseagenda .mag-detailed_completion-lists {
-
     line-height: 25px;
 }
 
 .path-report-courseagenda .mag-detailed_completion-lists span {
     color: #818181;
-
 }
 
 .path-report-courseagenda .mag-detailed_container-list span {
     display: flex;
     align-items: center;
     font-weight: normal;
-
 }
-
 
 .path-report-courseagenda .mag-detailed_container-list i {
     margin-right: 5px;
-
-
 }
 
 .path-report-courseagenda .mag-detailed_container-list {
     color: #818181;
     font-weight: normal;
 }
-
 
 .path-report-courseagenda .mag-detailed_icon-list-x {
     color: #d04961;
@@ -703,7 +669,6 @@
 
 }
 
-
 /*Icon Lock*/
 .path-report-courseagenda .mag-detailed_lock-icon {
     color: #328094;
@@ -713,13 +678,11 @@
 .path-report-courseagenda .mag-detailed_text-lock {
     color: #328094;
     font-weight: normal;
-
 }
 
 /*span lock*/
 .path-report-courseagenda .mag-detailed_text-lock span {
     font-weight: 750;
-
 }
 
 /*Line section*/
@@ -729,17 +692,8 @@
 }
 
 /*Restriction activity*/
-.path-report-courseagenda .mag-detailed_restriction-blocked {
+.path-report-courseagenda .mag-activity_blocked .mag-detailed_restriction {
     color: red;
-}
-
-/*State Blocked*/
-.path-report-courseagenda .mag-state-blocked {
-    border: solid 1px #969696;
-    color: #444;
-    background: #e7e7e7;
-    font-weight: bold;
-    font-size: 13px;
 }
 
 @media (min-width: 1024px) {
@@ -752,7 +706,6 @@
     .path-report-courseagenda .mag-activity_blocked:hover .mag-activity_content {
         align-items: center;
         padding-left: 70px;
-
     }
 
     .path-report-courseagenda .mag-activity_border-text {
@@ -821,7 +774,6 @@
     .path-report-courseagenda .mag-header_info-date p {
         margin-left: 20px;
     }
-
 
     .path-report-courseagenda .mag-section_unit {
         grid-column: span 12 / span 12;
@@ -918,7 +870,7 @@
         font-size: 15px;
     }
 
-    .path-report-courseagenda .mag-date_content-span,
+    .path-report-courseagenda .mag-activity_content-date span,
     .path-report-courseagenda .mag-activity_content-date > p {
         font-size: 14px;
         line-height: 1rem;
@@ -1011,7 +963,6 @@
 @media (max-width: 400px) {
     .path-report-courseagenda .mag-detailed_Weighting-grading-method {
         display: block;
-
     }
 
     .path-report-courseagenda .mag-detailed_grading-method {
@@ -1021,7 +972,7 @@
         margin-top: 10px;
     }
 
-    .path-report-courseagenda .mag-activity_state {
+    .path-report-courseagenda .mag-state {
         width: 5rem;
         font-size: 0.775rem;
     }

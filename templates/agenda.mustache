@@ -71,7 +71,7 @@
             </div>
             <div class="mag-section_activity">
                 {{#activities}}
-                    <div class="mag-activity_{{state}}" onclick="toggleInfo(event, this)">
+                    <div class="mag-activity mag-activity_{{state}}">
                         <div class="mag-activity_border-text mag-weighing">
                             <span class="mag-border_span-porcent">10%</span>
                             <span class="mag-border_span-text">ponderado</span>
@@ -87,7 +87,7 @@
                                     <div class="mag-activity_name-text">
                                         {{instancename}}
                                         <span class="mag-activity_name-span">
-                                            Actividad aprobada
+                                            {{fullstatename}}
                                         </span>
                                     </div>
                                 </div>
@@ -107,20 +107,28 @@
                             <!-- Dates -->
                             <div class="mag-activity_content-date">
                                 <p>
-                                    Calificada el <span class="mag-date_content-span">14 de septiembre de 2024</span>
-
+                                    {{{activityinfodatelabel}}}
                                 </p>
                             </div>
                             <!-- End of Dates -->
 
                             <!-- Grade or Status -->
                             <div class="mag-activity_content-state">
-                                <a href="https://virtual.ucatolicaluisamigo.edu.co/campus/grade/report/grader/index.php?id=24154"
-                                    target="_blank">
-                                    <div class="mag-activity_content-qualification mag-approved-qualification">
-                                        4,2 <i class="fa-solid fa-up-right-from-square mag-qualification_icon"></i>
+                                {{#currentgrade}}
+                                    <a href="https://virtual.ucatolicaluisamigo.edu.co/campus/grade/report/grader/index.php?id=24154"
+                                        target="_blank">
+                                        <div class="mag-activity_content-qualification mag-approved-qualification">
+                                            4,2 <i class="fa-solid fa-up-right-from-square mag-qualification_icon"></i>
+                                        </div>
+                                    </a>
+                                {{/currentgrade}}
+                                {{^currentgrade}}
+                                    <div>
+                                        <div class="mag-state">
+                                            {{statename}}
+                                        </div>
                                     </div>
-                                </a>
+                                {{/currentgrade}}
                             </div>
                             <!-- End of Grade or Status -->
 

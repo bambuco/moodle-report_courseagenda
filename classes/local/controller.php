@@ -36,6 +36,11 @@ class controller {
     public const COURSEDURATION_WEEKS = 2;
 
     /**
+     * @var string State active.
+     */
+    public const STATE_ACTIVE = 'active';
+
+    /**
      * @var string State blocked.
      */
     public const STATE_BLOCKED = 'blocked';
@@ -162,9 +167,10 @@ class controller {
         $excludein = null;
 
         $excludemodules = get_config('report_courseagenda', 'excludemodules');
-        if (empty($excludemodules)) {
+        $excludemodules = trim($excludemodules);
+        if (!empty($excludemodules)) {
             $excludemodules = explode(',', $excludemodules);
-            list($excludein, $params) = $DB->get_in_or_equal($excludemodules);
+            list($excludein, $params) = $DB->get_in_or_equal($excludemodules, SQL_PARAMS_NAMED, 'param', false);
         }
 
         $params['courseid'] = $course->id;
@@ -260,13 +266,17 @@ class controller {
         static $loaded = false;
 
         static $list = [
+            self::STATE_ACTIVE => [
+                'icon' => 'core:t/go',
+                'color' => '#9c27b0',
+            ],
             self::STATE_APPROVED => [
                 'icon' => 'core:t/approve',
                 'color' => '#50b447',
             ],
             self::STATE_BLOCKED => [
                 'icon' => 'core:t/locked',
-                'color' => '#3f3f3f',
+                'color' => '#646464',
             ],
             self::STATE_COMPLETED => [
                 'icon' => 'core:i/overriden_grade',
@@ -330,7 +340,8 @@ class controller {
                         continue;
                     }
 
-                    // Mdlcode assume: $state ['blocked', 'pending', 'completed', 'approved', 'failed', 'delivered', 'undelivered', 'retarded']
+                    // phpcs:ignore
+                    // Mdlcode assume: $state ['active', 'blocked', 'pending', 'completed', 'approved', 'failed', 'delivered', 'undelivered', 'retarded'].
                     $title = get_string('state_' . $state, 'report_courseagenda');
                     $list[$state]['iconhtml'] = $OUTPUT->pix_icon($iconsource[1], $title, $iconsource[0]);
                 }
@@ -371,12 +382,12 @@ class controller {
             $course = $DB->get_record('course', ['id' => $course], '*', MUST_EXIST);
         }
 
-        $modinfo = get_fast_modinfo($course);
-        $coursesections = $modinfo->get_section_info_all();
 
         $context = \context_course::instance($course->id);
         $courseformat = course_get_format($course->id);
         $course = $courseformat->get_course();
+        $modinfo = $courseformat->get_modinfo();
+        $coursesections = $modinfo->get_section_info_all();
         $hiddensections = property_exists($course, 'hiddensections') && $course->hiddensections != 1;
 
         if (!$hiddensections) {
@@ -386,6 +397,37 @@ class controller {
         $reportconfig = get_config('report_courseagenda');
         $includesection0 = $reportconfig->includesection0;
 
+        $completioninfo = new \completion_info($course);
+
+        $excludemodules = trim($reportconfig->excludemodules);
+        $excludemodules = explode(',', $excludemodules);
+
+        // Preload the modules completion information.
+        $params = [];
+        $excludein = null;
+
+        if (!empty($excludemodules)) {
+            list($excludein, $params) = $DB->get_in_or_equal($excludemodules, SQL_PARAMS_NAMED, 'param', false);
+        }
+
+        $params['courseid'] = $course->id;
+        $params['userid'] = $user->id;
+
+        $sql = "SELECT cmc.coursemoduleid AS id, cmc.completionstate
+                FROM {course_modules} cm
+                INNER JOIN {course_modules_completion} cmc ON cmc.userid = :userid AND cmc.coursemoduleid = cm.id
+                WHERE cm.course = :courseid
+                    AND cm.completion > 0";
+
+        if (!empty($excludein)) {
+            $sql .= " AND cm.module $excludein";
+        }
+
+        $completionmodules = $DB->get_records_sql($sql, $params);
+        // End of Preload the modules completion information.
+
+        $timedateshort = get_string('strftimedateshort', 'langconfig');
+        $timeformat = get_string('strftimetime24', 'langconfig');
         $sections = [];
         foreach ($coursesections as $coursesection) {
 
@@ -428,17 +470,11 @@ class controller {
             // Load activities from the modules.
             $section->activities = [];
             if (!empty($coursesection->sequence)) {
-                // Casting $course->modinfo to string prevents one notice when the field is null.
-                $modinfo = $courseformat->get_modinfo();
 
                 $sectionmods = explode(",", $coursesection->sequence);
 
-                $completioninfo = new \completion_info($course);
-
-                $excludemodules = $reportconfig->excludemodules;
-                $excludemodules = explode(',', $excludemodules);
-
                 foreach ($sectionmods as $modnumber) {
+                    $notcompletion = false;
 
                     if (empty($modinfo->cms[$modnumber])) {
                         continue;
@@ -450,20 +486,109 @@ class controller {
                         continue;
                     }
 
+                    // The activity don't have completion tracking.
+                    if ($completioninfo->is_enabled($mod) === COMPLETION_TRACKING_NONE) {
+                        $notcompletion = true;
+                    }
+
                     $cmdata = new \stdClass();
-                    $cmdata->instancename = format_string($modinfo->cms[$modnumber]->name, true, $course->id);
+                    $cmdata->instancename = format_string($mod->name, true, $course->id);
                     $cmdata->uniqueid = 'cm_' . $mod->id . '_' . time() . '_' . rand(0, 1000);
                     $cmdata->url = $mod->url;
                     $cmdata->hascompletion = false;
-                    $cmdata->state = 'pending';
+                    $cmdata->state = $notcompletion ? self::STATE_ACTIVE : self::STATE_PENDING;
                     $cmdata->enabled = $completioninfo->is_enabled($mod);
 
-                    if ($mod->available == 0) {
-                        $cmdata->state = 'blocked';
+                    $infodates = self::activity_enabledate($mod);
+
+                    if ($mod->available == 0 || $infodates->from > time()) {
+                        $cmdata->state = self::STATE_BLOCKED;
                     }
 
-                    $displayoptions = [];
-                    //$cm = new \cm_base($courseformat, $coursesection, $mod, $displayoptions);
+                    if (!$notcompletion && isset($completionmodules[$mod->id])) {
+                        switch ($completionmodules[$mod->id]) {
+                            case COMPLETION_INCOMPLETE:
+                                $cmdata->state = self::STATE_PENDING;
+                                break;
+                            case COMPLETION_COMPLETE:
+                                $cmdata->state = self::STATE_COMPLETED;
+                                break;
+                            case COMPLETION_COMPLETE_PASS:
+                                $cmdata->state = self::STATE_APPROVED;
+                                break;
+                            case COMPLETION_COMPLETE_FAIL_HIDDEN:
+                            case COMPLETION_COMPLETE_FAIL:
+                                $cmdata->state = self::STATE_FAILED;
+                                break;
+
+                        }
+                    }
+
+                    $infostate = null;
+                    $infodate = '';
+                    switch ($cmdata->state) {
+                        case self::STATE_PENDING:
+                            if ($infodates->until) {
+                                $infostate = ($infodates->until - time()) / (60 * 60 * 24);
+                            } else {
+                                $infostate = ($course->enddate - time()) / (60 * 60 * 24);
+                            }
+
+                            $infostate = round($infostate);
+
+                            break;
+                        case self::STATE_RETARDED:
+                            $infostate = 999;
+                            break;
+                        case self::STATE_UNDELIVERED:
+                            break;
+                        case self::STATE_BLOCKED:
+                            if (empty($infodates->from)) {
+                                $infodates->from = $course->startdate;
+                            }
+
+                            if (empty($infodates->until)) {
+                                $infodates->until = $course->enddate;
+                            }
+
+                            if (empty($infodates->until)) {
+                                $a = $infodates->from;
+                                $cmdata->activityinfodatelabel = get_string('infodate_blockedfrom', 'report_courseagenda', $a);
+                            } else if (date('Y-m-d', $infodates->from) === date('Y-m-d', $infodates->until)) {
+                                $b = new \stdClass();
+                                $b->from = userdate($infodates->from, $timeformat);
+                                $b->until = userdate($infodates->until, $timeformat);
+                                $hours = get_string('timehoursrange', 'report_courseagenda', $b);
+                                $a = userdate($infodates->from, $timedateshort) . ' ' . $hours;
+                                $cmdata->activityinfodatelabel = get_string('infodate_blockedone', 'report_courseagenda', $a);
+                            } else {
+                                $a = new \stdClass();
+                                $a->from = userdate($infodates->from, $timedateshort);
+                                $a->until = userdate($infodates->until, $timedateshort);
+                                $cmdata->activityinfodatelabel = get_string('infodate_blocked', 'report_courseagenda', $a);
+                            }
+
+                            break;
+                        case self::STATE_DELIVERED:
+                            break;
+                        case self::STATE_APPROVED:
+                            break;
+                        case self::STATE_FAILED:
+                            break;
+                        case self::STATE_COMPLETED:
+                            $infodate = userdate($completionmodules[$mod->id]->timemodified);
+                            break;
+
+                    }
+
+                    // phpcs:ignore
+                    // Mdlcode assume: $cmdata->state ['active', 'blocked', 'pending', 'completed', 'approved', 'failed', 'delivered', 'undelivered', 'retarded'].
+                    $cmdata->fullstatename = get_string('fullstate_' . $cmdata->state, 'report_courseagenda', $infostate);
+                    $cmdata->statename = get_string('state_' . $cmdata->state, 'report_courseagenda');
+
+                    if (empty($cmdata->activityinfodatelabel)) {
+                        $cmdata->activityinfodatelabel = get_string('infodate_' . $cmdata->state, 'report_courseagenda', $infodate);
+                    }
 
                     if ($completioninfo->is_enabled($mod) !== COMPLETION_TRACKING_NONE) {
                         $cmdata->hascompletion = true;
@@ -485,4 +610,69 @@ class controller {
 
         return $sections;
     }
+
+    /**
+     * Return the enable date of an activity.
+     *
+     * @param \cm_info $mod The course module info.
+     * @return object The enable dates of the activity: from and until.
+     */
+    public static function activity_enabledate(\cm_info $mod): object {
+        $dates = (object)[
+            'from' => '',
+            'until' => '',
+        ];
+
+        if (!empty($mod->availablefrom)) {
+            $dates->from = userdate($mod->availablefrom);
+            return $dates;
+        }
+
+        $cmdata = $mod->customdata;
+
+        if (is_string($cmdata)) {
+            return $dates;
+        }
+
+        if (is_array($cmdata)) {
+            $cmdata = (object)$cmdata;
+        }
+
+        switch ($mod->modname) {
+            case 'assign':
+                $dates->from = $cmdata->allowsubmissionsfromdate ?? '';
+                $dates->until = $cmdata->duedate ?? '';
+                break;
+            case 'data':
+                $dates->from = $cmdata->timeavailablefrom ?? '';
+                $dates->until = $cmdata->timeavailableto ?? '';
+                break;
+            case 'feedback':
+                $dates->from = $cmdata->timeopen ?? '';
+                $dates->until = $cmdata->timeclose ?? '';
+                break;
+            case 'forum':
+                $dates->until = $cmdata->duedate ?? '';
+                break;
+            case 'lesson':
+                $dates->from = $cmdata->available ?? '';
+                $dates->until = $cmdata->deadline ?? '';
+                break;
+            case 'quiz':
+                $dates->from = $cmdata->timeopen ?? '';
+                $dates->until = $cmdata->timeclose ?? '';
+                break;
+            case 'scorm':
+                $dates->from = $cmdata->timeopen ?? '';
+                $dates->until = $cmdata->timeclose ?? '';
+                break;
+            case 'workshop':
+                $dates->from = $cmdata->submissionstart ?? '';
+                $dates->until = $cmdata->submissionend ?? '';
+                break;
+        }
+
+        return $dates;
+    }
+
 }

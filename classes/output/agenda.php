@@ -59,7 +59,7 @@ class agenda implements renderable, templatable {
      * @return array Context variables for the template
      */
     public function export_for_template(renderer_base $output) {
-        global $CFG;
+        global $CFG, $PAGE;
 
         $reportconfig = get_config('report_courseagenda');
 
@@ -123,6 +123,8 @@ class agenda implements renderable, templatable {
             'progresscolors' => $progresscolor,
             'coursesections' => $coursesections,
         ];
+
+        $PAGE->requires->js_call_amd('report_courseagenda/main', 'init', []);
 
         return $defaultvariables;
 
