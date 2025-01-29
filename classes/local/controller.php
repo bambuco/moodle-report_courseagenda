@@ -16,6 +16,7 @@
 
 namespace report_courseagenda\local;
 
+use \core_grades\component_gradeitems;
 /**
  * Class controller
  *
@@ -83,6 +84,49 @@ class controller {
      * @var string State retarded.
      */
     public const STATE_RETARDED = 'retarded';
+
+    /**
+     * @var array The course modules.
+     */
+    private static $coursemodules = null;
+
+    /**
+     * Return the modules in a course.
+     *
+     * @param int $courseid The course id.
+     * @return array The course modules.
+     */
+    public static function get_coursemodules($courseid): array {
+        global $DB;
+
+        if (empty(self::$coursemodules)) {
+            $modules = $DB->get_records('modules');
+            $cms = $DB->get_records('course_modules', ['course' => $courseid]);
+            foreach ($cms as $cm) {
+                $cm->modulename = $modules[$cm->module]->name;
+
+                $component = 'mod_' . $cm->modulename;
+                $cm->gradeitemnamemapping = component_gradeitems::get_itemname_mapping_for_component($component);
+                if (component_gradeitems::defines_advancedgrading_itemnames_for_component($component)) {
+                    $cm->advancedgradingitemnames = component_gradeitems::get_advancedgrading_itemnames_for_component($component);
+                } else {
+                    $cm->advancedgradingitemnames = [];
+                }
+
+                $gradeitemnamemappingbyid = array_flip($cm->gradeitemnamemapping);
+                $cm->advancedgradingitemids = [];
+                foreach ($cm->advancedgradingitemnames as $itemname) {
+                    $cm->advancedgradingitemids[] = $gradeitemnamemappingbyid[$itemname];
+                }
+
+                $key = $cm->modulename . '_' . $cm->instance;
+                self::$coursemodules[$key] = $cm;
+
+            }
+        }
+
+        return self::$coursemodules;
+    }
 
     /**
      * Return the course teachers in a formated string.
@@ -382,7 +426,6 @@ class controller {
             $course = $DB->get_record('course', ['id' => $course], '*', MUST_EXIST);
         }
 
-
         $context = \context_course::instance($course->id);
         $courseformat = course_get_format($course->id);
         $course = $courseformat->get_course();
@@ -401,6 +444,12 @@ class controller {
 
         $excludemodules = trim($reportconfig->excludemodules);
         $excludemodules = explode(',', $excludemodules);
+
+        $activitiesgrades = self::activities_grades($course, $user);
+        $availablemethods = \grading_manager::available_methods();
+
+        // Load available modules.
+        $modules = $DB->get_records('modules', ['visible' => 1], 'name', 'id, name');
 
         // Preload the modules completion information.
         $params = [];
@@ -481,6 +530,7 @@ class controller {
                     }
 
                     $mod = $modinfo->cms[$modnumber];
+                    $moduletype = $modules[$mod->module]->name;
 
                     if (in_array($mod->modname, $excludemodules)) {
                         continue;
@@ -498,6 +548,7 @@ class controller {
                     $cmdata->hascompletion = false;
                     $cmdata->state = $notcompletion ? self::STATE_ACTIVE : self::STATE_PENDING;
                     $cmdata->enabled = $completioninfo->is_enabled($mod);
+                    $cmdata->activityinfodatelabel = '';
 
                     $infodates = self::activity_enabledate($mod);
 
@@ -528,6 +579,7 @@ class controller {
                     $infodate = '';
                     switch ($cmdata->state) {
                         case self::STATE_PENDING:
+                        case self::STATE_RETARDED:
                             if ($infodates->until) {
                                 $infostate = ($infodates->until - time()) / (60 * 60 * 24);
                             } else {
@@ -536,9 +588,6 @@ class controller {
 
                             $infostate = round($infostate);
 
-                            break;
-                        case self::STATE_RETARDED:
-                            $infostate = 999;
                             break;
                         case self::STATE_UNDELIVERED:
                             break;
@@ -600,6 +649,40 @@ class controller {
                     }
 
                     $cmdata->stateicon = self::get_state_iconhtml($cmdata->state);
+
+                    $cmdata->gradeitem = $activitiesgrades[$moduletype . '-' . $mod->instance] ?? null;
+                    $cmdata->showgrade = false;
+                    $cmdata->weighing = '0%';
+
+                    if ($cmdata->gradeitem) {
+                        $cmdata->currentgrade = [];
+                        $weighing = 0;
+                        foreach ($cmdata->gradeitem as $gradeitem) {
+                            $currentgrade = new \stdClass();
+                            $currentgrade->weighing = $gradeitem->info->weightformatted;
+                            $currentgrade->grademethod = $availablemethods[$gradeitem->info->grademethod] ?? '';
+
+                            // To calculate the general activity weighing.
+                            $weighing += $gradeitem->info->weightraw;
+
+                            if ($gradeitem->info->gradeformatted != '-') {
+                                $cmdata->showgrade = true;
+                                $currentgrade->value = $gradeitem->info->visible ? $gradeitem->info->gradeformatted : '-';
+
+                                if ($gradeitem->item->gradepass && (float)$gradeitem->item->gradepass > 0) {
+                                    $currentgrade->pass = $gradeitem->info->graderaw >= (float)$gradeitem->item->gradepass;
+                                } else {
+                                    $currentgrade->pass = $gradeitem->info->graderaw >= $reportconfig->gradetopass;
+                                }
+                            }
+
+                            $cmdata->currentgrade[] = $currentgrade;
+                        }
+
+                        $cmdata->weighing = !empty($cmdata->gradeitem) ? $weighing / count($cmdata->gradeitem) : 0;
+                        $cmdata->weighing .= '%';
+
+                    }
 
                     $section->activities[] = $cmdata;
                 }
@@ -675,4 +758,209 @@ class controller {
         return $dates;
     }
 
+    /**
+     * Return the course grades by activities.
+     *
+     * @param object $course The course object.
+     * @param object $user The user object.
+     * @return array The course grades by activities.
+     */
+    public static function activities_grades(object $course, object $user): array {
+        global $DB, $CFG, $OUTPUT;
+
+        $gradesinfo = [];
+
+        $coursecontext = \context_course::instance($course->id);
+        $canviewhidden = has_capability('moodle/grade:viewhidden', $coursecontext);
+        $canviewall = has_capability('moodle/grade:viewall', $coursecontext);
+
+        $showhiddenitems = grade_get_setting(
+            $course->id,
+            'report_user_showhiddenitems',
+            $CFG->grade_report_user_showhiddenitems
+        );
+
+        // Load the user report for use some methods.
+        $gpr = new \grade_plugin_return(['type' => 'report', 'plugin' => 'user', 'courseid' => $course->id, 'userid' => $user->id]);
+        $report = new userreportextended($course->id, $gpr, $coursecontext, $user->id);
+
+        $excludemodules = trim(get_config('report_courseagenda', 'excludemodules'));
+        $excludemodules = explode(',', $excludemodules);
+
+        $gradeitems = $DB->get_records('grade_items', ['courseid' => $course->id, 'itemtype' => 'mod']);
+
+        $coursemodules = self::get_coursemodules($course->id);
+
+        foreach ($gradeitems as $gradeitem) {
+
+            if (in_array($gradeitem->itemmodule, $excludemodules)) {
+                continue;
+            }
+
+            // Sort by module and instance id to make it easier to access them.
+            $gradeinfokey = $gradeitem->itemmodule . '-' . $gradeitem->iteminstance;
+            if (!isset($gradesinfo[$gradeinfokey])) {
+                $gradesinfo[$gradeinfokey] = [];
+            }
+            $customgradeinfo = new \stdClass();
+            $gradesinfo[$gradeinfokey][] = $customgradeinfo;
+            $customgradeinfo->info = new \stdClass();
+            $customgradeinfo->info->visible = true;
+
+            // Process the grade type.
+            if (!$gradegrade = \grade_grade::fetch(['itemid' => $gradeitem->id, 'userid' => $user->id])) {
+                $gradegrade = new \grade_grade();
+                $gradegrade->userid = $user->id;
+                $gradegrade->itemid = $gradeitem->id;
+            }
+
+            $gradegrade->load_grade_item();
+            $gradeitem = $gradegrade->grade_item;
+            $customgradeinfo->item = $gradeitem;
+
+            // Hidden Items.
+            if ($gradeitem->is_hidden()) {
+                $customgradeinfo->info->visible = false;
+                continue;
+            }
+
+            // If this is a hidden grade item, hide it completely from the user.
+            if ($gradegrade->is_hidden() && !$canviewhidden && (
+                $showhiddenitems == GRADE_REPORT_USER_HIDE_HIDDEN ||
+                ($showhiddenitems == GRADE_REPORT_USER_HIDE_UNTIL && !$gradegrade->is_hiddenuntil()))) {
+                    $customgradeinfo->info->visible = false;
+                    continue;
+            }
+
+            // Actual Grade - We need to calculate this whether.
+            $gradeval = $gradegrade->finalgrade;
+            if (!$canviewhidden) {
+                // Virtual Grade (may be calculated excluding hidden items etc).
+                $adjustedgrade = $report->get_blank_hidden_total_and_adjust_bounds($course->id,
+                    $gradegrade->grade_item,
+                    $gradeval);
+
+                $gradeval = $adjustedgrade['grade'];
+
+                // We temporarily adjust the view of this grade item - because the min and
+                // max are affected by the hidden values in the aggregation.
+                $gradegrade->grade_item->grademax = $adjustedgrade['grademax'];
+                $gradegrade->grade_item->grademin = $adjustedgrade['grademin'];
+                $hint['status'] = $adjustedgrade['aggregationstatus'];
+                $hint['weight'] = $adjustedgrade['aggregationweight'];
+            } else {
+                // The max and min for an aggregation may be different to the grade_item.
+                if (!is_null($gradeval)) {
+                    $gradegrade->grade_item->grademax = $gradegrade->get_grade_max();
+                    $gradegrade->grade_item->grademin = $gradegrade->get_grade_min();
+                }
+            }
+
+            // Basic grade item information.
+            $customgradeinfo->info->locked = $canviewall ? $gradegrade->grade_item->is_locked() : null;
+            $customgradeinfo->info->overridden = $gradegrade->is_overridden();
+            $customgradeinfo->info->excluded = $gradegrade->is_excluded();
+            $customgradeinfo->info->gradestatus = '';
+            $customgradeinfo->info->gradecontent = '';
+            $customgradeinfo->info->grademethod = '';
+
+            // Get the grading area.
+            $cm = $coursemodules[$gradeitem->itemmodule . '_' . $gradeitem->iteminstance];
+            if (in_array($gradeitem->itemnumber, $cm->advancedgradingitemids)) {
+                $cmcontext = \context_module::instance($cm->id);
+                $params = ['component' => 'mod_' . $gradeitem->itemmodule, 'contextid' => $cmcontext->id];
+                $gradingareas = $DB->get_record('grading_areas', $params);
+
+                if ($gradingareas) {
+                    $customgradeinfo->info->grademethod = $gradingareas->activemethod ?? '';
+                }
+            }
+
+            // This obliterates the weight because it provides a more informative description.
+            if (is_numeric($hint['weight'])) {
+                $customgradeinfo->info->weightraw = $hint['weight'];
+                $customgradeinfo->info->weightformatted = format_float($hint['weight'] * 100.0, 0) . ' %';
+            }
+            if ($hint['status'] != 'used' && $hint['status'] != 'unknown') {
+                $customgradeinfo->info->status = $hint['status'];
+            }
+
+            $gradestatus = '';
+
+            $context = [
+                'hidden' => $gradegrade->is_hidden(),
+                'locked' => $gradegrade->is_locked(),
+                'overridden' => $gradegrade->is_overridden(),
+                'excluded' => $gradegrade->is_excluded()
+            ];
+
+            if (in_array(true, $context)) {
+                $context['classes'] = 'gradestatus';
+                $customgradeinfo->info->gradestatus = $OUTPUT->render_from_template('core_grades/status_icons', $context);
+            }
+
+            $customgradeinfo->info->gradehiddenbydate = false;
+            $customgradeinfo->info->gradedatesubmitted = $gradegrade->get_datesubmitted();
+            $customgradeinfo->info->gradedategraded = $gradegrade->get_dategraded();
+
+            if (
+                !empty($CFG->grade_hiddenasdate)
+                && $gradegrade->get_datesubmitted()
+                && !$canviewhidden
+                && $gradegrade->is_hidden()
+            ) {
+                // The problem here is that we do not have the time when grade value was modified
+                // 'timemodified' is general modification date for grade_grades records.
+                $customgradeinfo->info->gradecontent = get_string(
+                    'submittedon',
+                    'grades',
+                    userdate(
+                        $gradegrade->get_datesubmitted(),
+                        get_string('strftimedatetimeshort')
+                    ) . $gradestatus
+                );
+                $customgradeinfo->info->gradehiddenbydate = true;
+            } else if ($gradegrade->is_hidden()) {
+                $customgradeinfo->info->gradecontent = '-';
+
+                if ($canviewhidden) {
+                    $customgradeinfo->info->graderaw = $gradeval;
+                    $customgradeinfo->info->gradecontent = grade_format_gradevalue($gradeval,
+                        $gradegrade->grade_item,
+                        true) . $gradestatus;
+                }
+            } else {
+                $gradestatusclass = '';
+                $gradepassicon = '';
+                $ispassinggrade = $gradegrade->is_passed($gradegrade->grade_item);
+                if (!is_null($gradeval) && !is_null($ispassinggrade)) {
+                    $gradestatusclass = $ispassinggrade ? 'gradepass' : 'gradefail';
+                    if ($ispassinggrade) {
+                        $gradepassicon = $OUTPUT->pix_icon(
+                            'i/valid',
+                            get_string('pass', 'grades'),
+                            null,
+                            ['class' => 'inline']
+                        );
+                    } else {
+                        $gradepassicon = $OUTPUT->pix_icon(
+                            'i/invalid',
+                            get_string('fail', 'grades'),
+                            null,
+                            ['class' => 'inline']
+                        );
+                    }
+                }
+
+                $customgradeinfo->info->gradeclass = $gradestatusclass;
+                $customgradeinfo->info->gradecontent = $gradepassicon . grade_format_gradevalue($gradeval,
+                        $gradegrade->grade_item, true) . $gradestatus;
+                $customgradeinfo->info->graderaw = $gradeval;
+            }
+            $customgradeinfo->info->gradeformatted = $customgradeinfo->info->gradecontent;
+
+        }
+
+        return $gradesinfo;
+    }
 }

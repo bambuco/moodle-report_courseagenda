@@ -116,6 +116,7 @@ class agenda implements renderable, templatable {
         $defaultvariables = [
             'baseurl' => $CFG->wwwroot,
             'course' => $course,
+            'courseid' => $course->id,
             'reportsummary' => $reportsummary,
             'showprogress' => $progress !== null,
             'progress' => $progress,

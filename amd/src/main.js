@@ -78,14 +78,15 @@ function clickActivity(e, $activity) {
     const $info = $activity.find('.mag-agenda_activity-info');
     const $hoverInfo = $activity.find('.mag-activity_border-text');
     const $hoverContent = $activity.find('.mag-activity_content');
-    const $icon = $activity.find('.mag-container_icons-show-more i');
+    const $icons = $activity.find('.mag-container_icons-show-more');
 
     if ($activity.hasClass('active')) {
         $activity.removeClass('active');
         $info.css('height', '0');
         $hoverInfo.show();
         $hoverContent.css('padding', '');
-        $icon.removeClass('fa-angles-up').addClass('fa-angles-down');
+        $icons.find('[data-angleop="more"]').show();
+        $icons.find('[data-angleop="collapse"]').hide();
     } else {
         closeAllAgendaActivities();
         $activity.addClass('active');
@@ -93,9 +94,9 @@ function clickActivity(e, $activity) {
         $info.css('height', $info[0].scrollHeight + 'px');
         $hoverContent.css('padding', '0');
         $hoverInfo.hide();
-        $icon.removeClass('fa-angles-down').addClass('fa-angles-up');
+        $icons.find('[data-angleop="more"]').hide();
+        $icons.find('[data-angleop="collapse"]').show();
     }
-    e.preventDefault();
 }
 
 /**
@@ -110,7 +111,8 @@ function closeAllAgendaActivities() {
         $this.find('.mag-agenda_activity-info').css('height', '0');
         $this.find('.mag-activity_border-text').show();
         $this.find('.mag-activity_content').css('padding', '');
-        $this.find('.mag-container_icons-show-more i').removeClass('fa-angles-up').addClass('fa-angles-down');
+        $this.find('.mag-container_icons-show-more [data-angleop="more"]').show();
+        $this.find('.mag-container_icons-show-more [data-angleop="collapse"]').hide();
     });
 }
 

@@ -96,3 +96,4 @@ Example:<br>failed|#FF0000<br>pending|#ffe600|tool_policy:pending<br>approved|#0
 $string['studytimelabel'] = '- {$a->dedication} hours of dedication ({$a->credits} academic credits)';
 $string['timehoursrange'] = 'from {$a->from} to {$a->until}';
 $string['weightedactivities'] = 'Weighted activities';
+$string['weighing'] = 'Weighing';

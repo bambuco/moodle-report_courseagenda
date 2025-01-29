@@ -73,8 +73,8 @@
                 {{#activities}}
                     <div class="mag-activity mag-activity_{{state}}">
                         <div class="mag-activity_border-text mag-weighing">
-                            <span class="mag-border_span-porcent">10%</span>
-                            <span class="mag-border_span-text">ponderado</span>
+                            <span class="mag-border_span-porcent">{{weighing}}</span>
+                            <span class="mag-border_span-text">{{#str}} weighing, report_courseagenda {{/str}}</span>
                         </div>
                         <div class="mag-activity_content">
 
@@ -95,12 +95,14 @@
                             <!-- End of Activity Name -->
                             <!-- Grade or Status Mobile -->
                             <div class="mag-activity_state-mobile">
-                                <a href="https://virtual.ucatolicaluisamigo.edu.co/campus/grade/report/grader/index.php?id=24154"
-                                    target="_blank">
-                                    <div class="mag-activity_content-qualification mag-qualification">
-                                        4,2 <i class="fa-solid fa-up-right-from-square mag-qualification_icon"></i>
+                                {{#currentgrade}}
+                                    <div class="mag-activity_content-qualification mag-qualification-{{#pass}}pass{{/pass}}{{^pass}}fail{{/pass}}">
+                                        <a href="{{baseurl}}/grade/report/user/index.php?id={{courseid}}" target="_blank">
+                                            <span>{{{value}}}</span>
+                                            {{#pix}} i/externallink {{/pix}}
+                                        </a>
                                     </div>
-                                </a>
+                                {{/currentgrade}}
                             </div>
                             <!-- End of Grade or Status Mobile -->
 
@@ -114,28 +116,31 @@
 
                             <!-- Grade or Status -->
                             <div class="mag-activity_content-state">
-                                {{#currentgrade}}
-                                    <a href="https://virtual.ucatolicaluisamigo.edu.co/campus/grade/report/grader/index.php?id=24154"
-                                        target="_blank">
-                                        <div class="mag-activity_content-qualification mag-approved-qualification">
-                                            4,2 <i class="fa-solid fa-up-right-from-square mag-qualification_icon"></i>
+                                {{#showgrade}}
+                                    {{#currentgrade}}
+                                        <div class="mag-activity_content-qualification mag-qualification-{{#pass}}pass{{/pass}}{{^pass}}fail{{/pass}}">
+                                            <a href="{{baseurl}}/grade/report/user/index.php?id={{courseid}}" target="_blank">
+                                                <span>{{{value}}}</span>
+                                                {{#pix}} i/externallink {{/pix}}
+                                            </a>
                                         </div>
-                                    </a>
-                                {{/currentgrade}}
-                                {{^currentgrade}}
+                                    {{/currentgrade}}
+                                {{/showgrade}}
+                                {{^showgrade}}
                                     <div>
                                         <div class="mag-state">
                                             {{statename}}
                                         </div>
                                     </div>
-                                {{/currentgrade}}
+                                {{/showgrade}}
                             </div>
                             <!-- End of Grade or Status -->
 
                             <!-- Icon: Arrow Up-Down -->
                             <div class="mag-activity_content-icon">
                                 <div class="mag-container_icons-show-more">
-                                    <i class="fa-solid fa-angles-down"></i>
+                                    <span data-angleop="more">{{#pix}} t/angles-down {{/pix}}</span>
+                                    <span data-angleop="collapse" class="hidden">{{#pix}} t/angles-up {{/pix}}</span>
                                 </div>
                             </div>
                         </div>
@@ -144,15 +149,17 @@
                         <div class="mag-agenda_activity-info">
                             <div>
                                 <div class="mag-detailed_completion-status">
-                                    <div class="mag-detailed_Weighting-grading-method">
-                                        <div
-                                            class="mag-agenda_activity_weighting-detailed mag-detailedWeighting_qualified">
-                                            Ponderación <span>10%</span>
+                                    {{#currentgrade}}
+                                        <div class="mag-detailed_Weighting-grading-method">
+                                            <div class="mag-agenda_activity_weighting-detailed mag-detailedweighting">
+                                                {{#str}} weighing, report_courseagenda {{/str}}
+                                                <span>{{weighing}}</span>
+                                            </div>
+                                            <div class="mag-detailed_grading-method">
+                                                {{grademethod}}
+                                            </div>
                                         </div>
-                                        <div class="mag-detailed_grading-method">
-                                            Calificación con rúbrica
-                                        </div>
-                                    </div>
+                                    {{/currentgrade}}
                                     <div class="mag-detailed_completion-lists">
                                         <div class="mag-detailed_container-list">
                                             <span>

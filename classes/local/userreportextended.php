@@ -14,19 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace report_courseagenda\local;
+
 /**
- * Version information for Course agenda
+ * Class userreportextended
  *
  * @package    report_courseagenda
  * @copyright  2025 David Herney @ BambuCo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class userreportextended extends \gradereport_user\report\user {
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component    = 'report_courseagenda';
-$plugin->release      = '4.3.0';
-$plugin->version      = 2025011900.06;
-$plugin->requires     = 2023100900;
-$plugin->supported    = [403, 405];
-$plugin->maturity     = MATURITY_ALPHA;
+    /**
+     * Optionally blank out course/category totals if they contain any hidden items
+     *
+     * Only used to make public the protected method blank_hidden_total_and_adjust_bounds.
+     *
+     * @param string $courseid the course id
+     * @param string $course_item an instance of grade_item
+     * @param string $finalgrade the grade for the course_item
+     * @return array[] containing values for 'grade', 'grademax', 'grademin', 'aggregationstatus' and 'aggregationweight'
+     */
+    public function get_blank_hidden_total_and_adjust_bounds($courseid, $course_item, $finalgrade) {
+        return parent::blank_hidden_total_and_adjust_bounds($courseid, $course_item, $finalgrade);
+    }
+}
