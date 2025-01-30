@@ -95,14 +95,16 @@
                             <!-- End of Activity Name -->
                             <!-- Grade or Status Mobile -->
                             <div class="mag-activity_state-mobile">
-                                {{#currentgrade}}
-                                    <div class="mag-activity_content-qualification mag-qualification-{{#pass}}pass{{/pass}}{{^pass}}fail{{/pass}}">
-                                        <a href="{{baseurl}}/grade/report/user/index.php?id={{courseid}}" target="_blank">
-                                            <span>{{{value}}}</span>
-                                            {{#pix}} i/externallink {{/pix}}
-                                        </a>
-                                    </div>
-                                {{/currentgrade}}
+                                {{#showgrade}}
+                                    <a href="{{baseurl}}/grade/report/user/index.php?id={{courseid}}" target="_blank">
+                                        {{#currentgrade}}
+                                            <div class="mag-activity_content-qualification mag-qualification-{{#pass}}pass{{/pass}}{{^pass}}fail{{/pass}}">
+                                                <span>{{{value}}}</span>
+                                            </div>
+                                        {{/currentgrade}}
+                                        {{#pix}} i/externallink {{/pix}}
+                                    </a>
+                                {{/showgrade}}
                             </div>
                             <!-- End of Grade or Status Mobile -->
 
@@ -117,14 +119,14 @@
                             <!-- Grade or Status -->
                             <div class="mag-activity_content-state">
                                 {{#showgrade}}
-                                    {{#currentgrade}}
-                                        <div class="mag-activity_content-qualification mag-qualification-{{#pass}}pass{{/pass}}{{^pass}}fail{{/pass}}">
-                                            <a href="{{baseurl}}/grade/report/user/index.php?id={{courseid}}" target="_blank">
+                                    <a href="{{baseurl}}/grade/report/user/index.php?id={{courseid}}" target="_blank">
+                                        {{#currentgrade}}
+                                            <div class="mag-activity_content-qualification mag-qualification-{{#pass}}pass{{/pass}}{{^pass}}fail{{/pass}}">
                                                 <span>{{{value}}}</span>
-                                                {{#pix}} i/externallink {{/pix}}
-                                            </a>
-                                        </div>
-                                    {{/currentgrade}}
+                                            </div>
+                                        {{/currentgrade}}
+                                        {{#pix}} i/externallink {{/pix}}
+                                    </a>
                                 {{/showgrade}}
                                 {{^showgrade}}
                                     <div>
@@ -162,34 +164,33 @@
                                     {{/currentgrade}}
                                     <div class="mag-detailed_completion-lists">
                                         <div class="mag-detailed_container-list">
+                                            {{#infodates}}
                                             <span>
-                                                <i></i>
-                                                Fecha límite de entrega: &nbsp;<b>30/08/2024 23:00</b></span>
+                                                {{#str}} deadlinedelivery, report_courseagenda {{/str}} <b>{{untilformated}}</b>
+                                            </span>
+                                            {{#feedbackdateformated}}
+                                                <span>
+                                                    {{#str}} feedbackdate, report_courseagenda {{/str}} <b>{{.}}</b>
+                                                </span>
+                                            {{/feedbackdateformated}}
+                                            {{/infodates}}
                                             <span>
-                                                <i></i>
-                                                Retroalimentación: &nbsp;<b>14 de septiembre de 2024</b> </span>
-                                            <span>
-                                                <i></i>
-                                                Tipo de actividad: &nbsp;<b>Foro</b> </span>
-
+                                                {{#str}} activitytype, report_courseagenda {{/str}} <b>{{activitytype}}</b>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mag-detailed_info-text">
-                                    <div class="mag-detailed_info-text-status">
-                                        <p> Estado de finalización de actividad:</p>
-                                    </div>
-                                    <div class="mag-detailed_completion-lists">
-                                        <div class="mag-detailed_container-list">
-                                            <span>
-                                                <i class="fa-solid fa-check mag-detailed_icon-list-check"></i>
-                                                El estudiante debe entregar esta actividad para completarla</span>
-                                            <span>
-                                                <i class="fa-solid fa-check mag-detailed_icon-list-check"></i>
-                                                El estudiante debe ver esta actividad para finalizarla</span>
-
+                                    {{#restrictions}}
+                                        <div class="mag-detailed_info-text-status">
+                                            {{#str}} conditionstounlock, report_courseagenda {{/str}}
                                         </div>
-                                    </div>
+                                        <div class="mag-detailed_completion-lists">
+                                            <div class="mag-detailed_container-list">
+                                                {{{.}}}
+                                            </div>
+                                        </div>
+                                    {{/restrictions}}
                                     <div class="mag-section_line"></div>
                                     <br>
                                     <div>
@@ -200,12 +201,12 @@
                                     </div>
                                 </div>
                                 <div class="mag-detailed_info-btn">
-                                    <a href="https://virtual.ucatolicaluisamigo.edu.co/campus/mod/assign/view.php?id=739505"
+                                    <a href="{{{modurl}}}"
                                         target="_blank">
                                         <div class="mag-detailed_info-icon">
                                             <div class="mag-detailed_icon-see-activity">
-                                                <i class="fa-solid fa-arrow-right"></i>
-                                                <p>Ver actividad</p>
+                                                {{#pix}} t/right {{/pix}}
+                                                <p>{{#str}} viewactivity, report_courseagenda {{/str}}</p>
                                             </div>
                                         </div>
                                     </a>

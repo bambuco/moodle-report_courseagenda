@@ -273,6 +273,9 @@
 
 .path-report-courseagenda .mag-container_agenda a {
     text-decoration: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .path-report-courseagenda .mag-agenda_activity-info {
@@ -285,6 +288,11 @@
 .path-report-courseagenda .mag-section_activity > div.active .mag-agenda_activity-info {
     padding: 0.30% 0%;
     border-top: 1px solid #d8d8d8;
+}
+
+.path-report-courseagenda .mag-activity_active {
+    position: relative;
+    border-left: solid #9c27b0 5.8px;
 }
 
 .path-report-courseagenda .mag-activity_approved {
@@ -350,6 +358,10 @@
 
 .path-report-courseagenda .mag-detailedweighting span {
     font-weight: bolder;
+}
+
+.path-report-courseagenda .mag-activity_active .mag-weighing {
+    background-color: #9c27b0;
 }
 
 .path-report-courseagenda .mag-activity_approved .mag-weighing,
@@ -484,21 +496,25 @@
 .path-report-courseagenda .mag-activity_content-qualification {
     display: flex;
     align-items: center;
-    padding: 10px 35px;
+    padding: 10px 5px;
     font-size: 19px;
     font-weight: 600;
     line-height: 1.75rem;
 }
 
-.path-report-courseagenda .mag-qualification-pass a {
+.path-report-courseagenda .mag-qualification-pass {
     color: #50b447;
 }
 
-.path-report-courseagenda .mag-qualification-fail a {
+.path-report-courseagenda .mag-qualification-fail {
     color: #d04961;
 }
 
-.path-report-courseagenda .mag-activity_content-qualification i {
+.path-report-courseagenda .mag-activity_content-state .icon {
+    margin-right: 0.2rem;
+}
+
+.path-report-courseagenda .mag-activity_content-state a > i {
     font-size: 15px;
     color: #8b8b8b;
     margin-left: 6px;
@@ -618,8 +634,8 @@
 .path-report-courseagenda .mag-detailed_info-text-status {
     font-weight: bold;
     color: #818181;
-    font-size: 25px;
-    margin-top: 30px;
+    font-size: 16px;
+    margin-top: 10px;
 }
 
 .path-report-courseagenda .mag-detailed_icon-see-activity {
@@ -627,7 +643,11 @@
     line-height: 0%;
 }
 
-.path-report-courseagenda .mag-detailed_icon-see-activity:hover {
+.path-report-courseagenda .mag-detailed_icon-see-activity p {
+    margin-top: 10px;
+}
+
+.path-report-courseagenda .mag-detailed_icon-see-activity:hover i {
     font-size: 20px;
 }
 
@@ -638,6 +658,7 @@
 
 .path-report-courseagenda .mag-detailed_completion-lists {
     line-height: 25px;
+    padding-left: 10px;
 }
 
 .path-report-courseagenda .mag-detailed_completion-lists span {
@@ -650,8 +671,8 @@
     font-weight: normal;
 }
 
-.path-report-courseagenda .mag-detailed_container-list i {
-    margin-right: 5px;
+.path-report-courseagenda .mag-detailed_container-list b {
+    padding-left: 5px;
 }
 
 .path-report-courseagenda .mag-detailed_container-list {
@@ -707,6 +728,7 @@
 
 @media (min-width: 1024px) {
 
+    .path-report-courseagenda .mag-activity_active:hover .mag-activity_content,
     .path-report-courseagenda .mag-activity_approved:hover .mag-activity_content,
     .path-report-courseagenda .mag-activity_failed:hover .mag-activity_content,
     .path-report-courseagenda .mag-activity_pending:hover .mag-activity_content,
@@ -749,6 +771,7 @@
         font-size: 16px;
     }
 
+    .path-report-courseagenda .mag-activity_active:hover .mag-activity_border-text span,
     .path-report-courseagenda .mag-activity_approved:hover .mag-activity_border-text span,
     .path-report-courseagenda .mag-activity_failed:hover .mag-activity_border-text span,
     .path-report-courseagenda .mag-activity_pending:hover .mag-activity_border-text span,
@@ -758,6 +781,7 @@
         opacity: 1;
     }
 
+    .path-report-courseagenda .mag-activity_active:hover .mag-activity_border-text,
     .path-report-courseagenda .mag-activity_approved:hover .mag-activity_border-text,
     .path-report-courseagenda .mag-activity_failed:hover .mag-activity_border-text,
     .path-report-courseagenda .mag-activity_pending:hover .mag-activity_border-text,
@@ -919,7 +943,7 @@
     }
 
     .path-report-courseagenda .mag-activity_content-qualification {
-        padding: 0 35px;
+        padding: 0 5px;
     }
 
     .path-report-courseagenda .mag-activity_content-date {

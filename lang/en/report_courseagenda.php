@@ -25,7 +25,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['activitytype'] = 'Activity type';
 $string['allactivities'] = 'All activities';
+$string['automaticgrade'] = 'Automatic grade';
+$string['conditionstounlock'] = 'Conditions to unlock this activity';
 $string['courseagenda:view'] = 'View Course agenda report';
 $string['courseagenda:viewall'] = 'View Course agenda report for all users';
 $string['coursedurationformat'] = 'Course duration format';
@@ -34,8 +37,10 @@ $string['daystograde'] = 'Days to grade';
 $string['daystograde_help'] = 'The number of days that a teacher has to grade a student\'s activity.';
 $string['daystosendactivity'] = 'Days to send activity';
 $string['daystosendactivity_help'] = 'The number of days that a student has to send an activity.';
+$string['deadlinedelivery'] = 'Deadline for delivery';
 $string['excludemodules'] = 'Exclude modules';
 $string['excludemodules_help'] = 'Select the modules to exclude from the course agenda report.';
+$string['feedbackdate'] = 'Feedback date';
 $string['field_academiccredits'] = 'Academic credits';
 $string['field_academiccredits_help'] = 'A custom field to use for the academic credits in the course.';
 $string['fullstate_active'] = 'Active';
@@ -95,5 +100,6 @@ For the icons list see: <a href="https://componentlibrary.moodle.com/admin/tool/
 Example:<br>failed|#FF0000<br>pending|#ffe600|tool_policy:pending<br>approved|#00FF00|core:t/approve<br>';
 $string['studytimelabel'] = '- {$a->dedication} hours of dedication ({$a->credits} academic credits)';
 $string['timehoursrange'] = 'from {$a->from} to {$a->until}';
-$string['weightedactivities'] = 'Weighted activities';
+$string['viewactivity'] = 'View activity';
 $string['weighing'] = 'Weighing';
+$string['weightedactivities'] = 'Weighted activities';

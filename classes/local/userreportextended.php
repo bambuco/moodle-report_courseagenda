@@ -31,11 +31,11 @@ class userreportextended extends \gradereport_user\report\user {
      * Only used to make public the protected method blank_hidden_total_and_adjust_bounds.
      *
      * @param string $courseid the course id
-     * @param string $course_item an instance of grade_item
+     * @param string $courseitem an instance of grade_item
      * @param string $finalgrade the grade for the course_item
      * @return array[] containing values for 'grade', 'grademax', 'grademin', 'aggregationstatus' and 'aggregationweight'
      */
-    public function get_blank_hidden_total_and_adjust_bounds($courseid, $course_item, $finalgrade) {
-        return parent::blank_hidden_total_and_adjust_bounds($courseid, $course_item, $finalgrade);
+    public function get_blank_hidden_total_and_adjust_bounds($courseid, $courseitem, $finalgrade) {
+        return parent::blank_hidden_total_and_adjust_bounds($courseid, $courseitem, $finalgrade);
     }
 }

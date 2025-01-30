@@ -16,7 +16,7 @@
 
 namespace report_courseagenda\local;
 
-use \core_grades\component_gradeitems;
+use core_grades\component_gradeitems;
 /**
  * Class controller
  *
@@ -86,9 +86,70 @@ class controller {
     public const STATE_RETARDED = 'retarded';
 
     /**
-     * @var array The course modules.
+     * @var array All modules in the platform.
      */
-    private static $coursemodules = null;
+    private static $modules = null;
+
+    /**
+     * @var array The courses modules.
+     */
+    private static $coursemodules = [];
+
+    /**
+     * @var array The activities grades.
+     */
+    private static $activitiesgrades = [];
+
+    /**
+     * Return the modules in the platform.
+     *
+     * @param bool $onlyvisible If true, only the visible modules will be returned.
+     * @return array The modules.
+     */
+    public static function get_modules(bool $onlyvisible = false): array {
+        global $DB;
+
+        if (empty(self::$modules)) {
+            self::$modules = $DB->get_records('modules');
+        }
+
+        if ($onlyvisible) {
+            $modules = [];
+            foreach (self::$modules as $module) {
+                if ($module->visible) {
+                    $modules[$module->id] = $module;
+                }
+            }
+
+            return $modules;
+        }
+
+        return self::$modules;
+    }
+
+    /**
+     * Return a module by its id.
+     *
+     * @param int $moduleid The module id.
+     * @return object|null The module.
+     */
+    public static function get_modulebyid(int $moduleid): ?object {
+        $modules = self::get_modules();
+
+        return $modules[$moduleid] ?? null;
+    }
+
+    /**
+     * Return the module name by its id.
+     *
+     * @param int $moduleid The module id.
+     * @return string The module name.
+     */
+    public static function get_modulename(int $moduleid): string {
+        $module = self::get_modulebyid($moduleid);
+
+        return $module ? $module->name : '';
+    }
 
     /**
      * Return the modules in a course.
@@ -99,8 +160,8 @@ class controller {
     public static function get_coursemodules($courseid): array {
         global $DB;
 
-        if (empty(self::$coursemodules)) {
-            $modules = $DB->get_records('modules');
+        if (empty(self::$coursemodules[$courseid])) {
+            $modules = self::get_modules();
             $cms = $DB->get_records('course_modules', ['course' => $courseid]);
             foreach ($cms as $cm) {
                 $cm->modulename = $modules[$cm->module]->name;
@@ -120,12 +181,12 @@ class controller {
                 }
 
                 $key = $cm->modulename . '_' . $cm->instance;
-                self::$coursemodules[$key] = $cm;
+                self::$coursemodules[$courseid][$key] = $cm;
 
             }
         }
 
-        return self::$coursemodules;
+        return self::$coursemodules[$courseid];
     }
 
     /**
@@ -449,7 +510,7 @@ class controller {
         $availablemethods = \grading_manager::available_methods();
 
         // Load available modules.
-        $modules = $DB->get_records('modules', ['visible' => 1], 'name', 'id, name');
+        $modules = self::get_modules(true);
 
         // Preload the modules completion information.
         $params = [];
@@ -475,8 +536,11 @@ class controller {
         $completionmodules = $DB->get_records_sql($sql, $params);
         // End of Preload the modules completion information.
 
+        $dateshort = get_string('strftimedatetimeshort', 'langconfig');
+        $dateoneday = get_string('strftimedate', 'langconfig');
         $timedateshort = get_string('strftimedateshort', 'langconfig');
         $timeformat = get_string('strftimetime24', 'langconfig');
+        $daystograde = (get_config('report_courseagenda', 'daystograde') * 24 * 60 * 60);
         $sections = [];
         foreach ($coursesections as $coursesection) {
 
@@ -541,6 +605,8 @@ class controller {
                         $notcompletion = true;
                     }
 
+                    $gradeitem = $activitiesgrades[$moduletype . '-' . $mod->instance] ?? null;
+
                     $cmdata = new \stdClass();
                     $cmdata->instancename = format_string($mod->name, true, $course->id);
                     $cmdata->uniqueid = 'cm_' . $mod->id . '_' . time() . '_' . rand(0, 1000);
@@ -549,8 +615,26 @@ class controller {
                     $cmdata->state = $notcompletion ? self::STATE_ACTIVE : self::STATE_PENDING;
                     $cmdata->enabled = $completioninfo->is_enabled($mod);
                     $cmdata->activityinfodatelabel = '';
+                    $cmdata->modurl = new \moodle_url('/mod/' . $mod->modname . '/view.php', ['id' => $mod->id]);
+
+                    // Mdlcode assume: $moduletype ['assign', 'book'].
+                    $cmdata->activitytype = get_string('pluginname', $moduletype);
 
                     $infodates = self::activity_enabledate($mod);
+                    $cmdata->infodates = $infodates;
+
+                    if (!$infodates->until) {
+                        $infodates->until = $course->enddate;
+                    }
+                    $infodates->untilformated = userdate($infodates->until, $dateshort);
+
+                    if (self::require_feedbackgrade($mod, $gradeitem)) {
+                        $infodates->feedbackdate = $infodates->until + $daystograde;
+                        $infodates->feedbackdateformated = userdate($infodates->feedbackdate, $dateoneday);
+                    } else {
+                        $infodates->feedbackdate = 0;
+                        $infodates->feedbackdateformated = get_string('automaticgrade', 'report_courseagenda');
+                    }
 
                     if ($mod->available == 0 || $infodates->from > time()) {
                         $cmdata->state = self::STATE_BLOCKED;
@@ -580,12 +664,7 @@ class controller {
                     switch ($cmdata->state) {
                         case self::STATE_PENDING:
                         case self::STATE_RETARDED:
-                            if ($infodates->until) {
-                                $infostate = ($infodates->until - time()) / (60 * 60 * 24);
-                            } else {
-                                $infostate = ($course->enddate - time()) / (60 * 60 * 24);
-                            }
-
+                            $infostate = ($infodates->until - time()) / (60 * 60 * 24);
                             $infostate = round($infostate);
 
                             break;
@@ -650,7 +729,8 @@ class controller {
 
                     $cmdata->stateicon = self::get_state_iconhtml($cmdata->state);
 
-                    $cmdata->gradeitem = $activitiesgrades[$moduletype . '-' . $mod->instance] ?? null;
+                    // Start Grade information.
+                    $cmdata->gradeitem = $gradeitem;
                     $cmdata->showgrade = false;
                     $cmdata->weighing = '0%';
 
@@ -679,10 +759,15 @@ class controller {
                             $cmdata->currentgrade[] = $currentgrade;
                         }
 
-                        $cmdata->weighing = !empty($cmdata->gradeitem) ? $weighing / count($cmdata->gradeitem) : 0;
+                        $cmdata->weighing = !empty($cmdata->gradeitem) ? $weighing : 0;
+                        $cmdata->weighing = round($cmdata->weighing * 100, 0);
                         $cmdata->weighing .= '%';
 
                     }
+                    // End of Grade information.
+
+                    // Start module availability.
+                    $cmdata->restrictions = self::get_activityrestrictions($mod);
 
                     $section->activities[] = $cmdata;
                 }
@@ -698,16 +783,16 @@ class controller {
      * Return the enable date of an activity.
      *
      * @param \cm_info $mod The course module info.
-     * @return object The enable dates of the activity: from and until.
+     * @return object The enable dates of the activity: from, until.
      */
     public static function activity_enabledate(\cm_info $mod): object {
         $dates = (object)[
-            'from' => '',
-            'until' => '',
+            'from' => 0,
+            'until' => 0,
         ];
 
         if (!empty($mod->availablefrom)) {
-            $dates->from = userdate($mod->availablefrom);
+            $dates->from = $mod->availablefrom;
             return $dates;
         }
 
@@ -767,6 +852,10 @@ class controller {
      */
     public static function activities_grades(object $course, object $user): array {
         global $DB, $CFG, $OUTPUT;
+
+        if (isset(self::$activitiesgrades[$course->id])) {
+            return self::$activitiesgrades[$course->id];
+        }
 
         $gradesinfo = [];
 
@@ -834,6 +923,7 @@ class controller {
 
             // Actual Grade - We need to calculate this whether.
             $gradeval = $gradegrade->finalgrade;
+            $hint = $gradegrade->get_aggregation_hint();
             if (!$canviewhidden) {
                 // Virtual Grade (may be calculated excluding hidden items etc).
                 $adjustedgrade = $report->get_blank_hidden_total_and_adjust_bounds($course->id,
@@ -863,6 +953,8 @@ class controller {
             $customgradeinfo->info->gradestatus = '';
             $customgradeinfo->info->gradecontent = '';
             $customgradeinfo->info->grademethod = '';
+            $customgradeinfo->info->weightformatted = '0%';
+            $customgradeinfo->info->weightraw = 0;
 
             // Get the grading area.
             $cm = $coursemodules[$gradeitem->itemmodule . '_' . $gradeitem->iteminstance];
@@ -879,7 +971,7 @@ class controller {
             // This obliterates the weight because it provides a more informative description.
             if (is_numeric($hint['weight'])) {
                 $customgradeinfo->info->weightraw = $hint['weight'];
-                $customgradeinfo->info->weightformatted = format_float($hint['weight'] * 100.0, 0) . ' %';
+                $customgradeinfo->info->weightformatted = format_float($hint['weight'] * 100.0, 0) . '%';
             }
             if ($hint['status'] != 'used' && $hint['status'] != 'unknown') {
                 $customgradeinfo->info->status = $hint['status'];
@@ -891,7 +983,7 @@ class controller {
                 'hidden' => $gradegrade->is_hidden(),
                 'locked' => $gradegrade->is_locked(),
                 'overridden' => $gradegrade->is_overridden(),
-                'excluded' => $gradegrade->is_excluded()
+                'excluded' => $gradegrade->is_excluded(),
             ];
 
             if (in_array(true, $context)) {
@@ -961,6 +1053,88 @@ class controller {
 
         }
 
+        self::$activitiesgrades[$course->id] = $gradesinfo;
+
         return $gradesinfo;
     }
+
+    /**
+     * Return if the activity requires a feedback grade.
+     *
+     * @param \cm_info $mod The course module info.
+     * @param array|null $modgrades The activity grades.
+     * @return bool If the activity requires a feedback grade.
+     */
+    public static function require_feedbackgrade(\cm_info $mod, ?array $modgrades): bool {
+        global $DB;
+
+        $coursemodules = self::get_coursemodules($mod->course);
+        $cm = $coursemodules[$mod->modname . '_' . $mod->instance];
+
+        $hasadvancedgrading = (count($cm->advancedgradingitemids) > 0);
+
+        switch ($mod->modname) {
+            case 'assign':
+                return true;
+            case 'data':
+                $data = $DB->get_record('data', ['id' => $mod->instance]);
+                return $data->approval == 1;
+            case 'forum':
+                return $hasadvancedgrading;
+            case 'lesson':
+                // ToDo: validar si la lección tiene algo que deba ser valificado por el profesor.
+                return $hasadvancedgrading;
+            case 'quiz':
+                // ToDo: hay que validar si el cuestionario tiene preguntas tipo ensayo.
+                return true;
+            case 'workshop':
+                return $hasadvancedgrading;
+        }
+
+        return false;
+    }
+
+    /**
+     * Return the course module restrictions.
+     *
+     * @param \cm_info $mod The course module info.
+     * @return string The course module restrictions html.
+     */
+    public static function get_activityrestrictions(\cm_info $mod): string {
+
+        if (empty($mod->availableinfo)) {
+            return '';
+        }
+
+        $course = $mod->get_course();
+
+        $text = \core_availability\info::format_info($mod->availableinfo, $course);
+
+        return $text;
+    }
+
+    /**
+     * Return the course module restrictions with course format output.
+     *
+     * @param \cm_info $mod The course module info.
+     * @return string The course module restrictions html.
+     */
+    public static function get_activityrestrictionsfull(\cm_info $mod): string {
+        global $OUTPUT;
+
+        if (empty($mod->availableinfo)) {
+            return '';
+        }
+
+        $course = $mod->get_course();
+        $section = $mod->get_section_info($mod->section);
+
+        $courseformat = course_get_format($course->id);
+        $availabilityclass = $courseformat->get_output_classname('content\\cm\\availability');
+        $availability = new $availabilityclass($courseformat, $section, $mod);
+
+        return $OUTPUT->render($availability);
+
+    }
+
 }
