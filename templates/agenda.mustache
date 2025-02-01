@@ -181,6 +181,17 @@
                                     </div>
                                 </div>
                                 <div class="mag-detailed_info-text">
+                                    {{#completion}}
+                                        <div class="mag-detailed_info-text-status">
+                                            {{#str}} completionconditions, report_courseagenda {{/str}}
+                                        </div>
+                                        <div class="mag-detailed_completion-lists">
+                                            <div class="mag-detailed_container-list">
+                                                {{{.}}}
+                                            </div>
+                                        </div>
+                                    {{/completion}}
+
                                     {{#restrictions}}
                                         <div class="mag-detailed_info-text-status">
                                             {{#str}} conditionstounlock, report_courseagenda {{/str}}
@@ -191,14 +202,13 @@
                                             </div>
                                         </div>
                                     {{/restrictions}}
-                                    <div class="mag-section_line"></div>
-                                    <br>
-                                    <div>
-                                        <i class="fa-solid fa-unlock mag-detailed_lock-icon"></i>
+
+                                    {{#extensions}}
                                         <div class="mag-detailed_text-lock">
-                                            La actividad tuvo una ampliación de plazo de <span> 3 días </span>
+                                            {{#pix}} i/unlock {{/pix}}
+                                            {{{.}}}
                                         </div>
-                                    </div>
+                                    {{/extensions}}
                                 </div>
                                 <div class="mag-detailed_info-btn">
                                     <a href="{{{modurl}}}"

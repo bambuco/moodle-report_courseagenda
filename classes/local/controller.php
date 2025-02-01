@@ -490,9 +490,14 @@ class controller {
         $context = \context_course::instance($course->id);
         $courseformat = course_get_format($course->id);
         $course = $courseformat->get_course();
-        $modinfo = $courseformat->get_modinfo();
+        // phpcs:ignore
+        // $modinfo = $courseformat->get_modinfo();
+        $modinfo = get_fast_modinfo($course, $user->id);
+
         $coursesections = $modinfo->get_section_info_all();
         $hiddensections = property_exists($course, 'hiddensections') && $course->hiddensections != 1;
+
+        $usergroups = groups_get_all_groups($course->id, $user->id);
 
         if (!$hiddensections) {
             $hiddensections = has_capability('moodle/course:viewhiddensections', $context, $USER);
@@ -538,8 +543,6 @@ class controller {
 
         $dateshort = get_string('strftimedatetimeshort', 'langconfig');
         $dateoneday = get_string('strftimedate', 'langconfig');
-        $timedateshort = get_string('strftimedateshort', 'langconfig');
-        $timeformat = get_string('strftimetime24', 'langconfig');
         $daystograde = (get_config('report_courseagenda', 'daystograde') * 24 * 60 * 60);
         $sections = [];
         foreach ($coursesections as $coursesection) {
@@ -617,7 +620,8 @@ class controller {
                     $cmdata->activityinfodatelabel = '';
                     $cmdata->modurl = new \moodle_url('/mod/' . $mod->modname . '/view.php', ['id' => $mod->id]);
 
-                    // Mdlcode assume: $moduletype ['assign', 'book'].
+                    // phpcs:ignore
+                    // Mdlcode assume: $moduletype ['assign', 'book', 'data'].
                     $cmdata->activitytype = get_string('pluginname', $moduletype);
 
                     $infodates = self::activity_enabledate($mod);
@@ -628,12 +632,13 @@ class controller {
                     }
                     $infodates->untilformated = userdate($infodates->until, $dateshort);
 
-                    if (self::require_feedbackgrade($mod, $gradeitem)) {
-                        $infodates->feedbackdate = $infodates->until + $daystograde;
-                        $infodates->feedbackdateformated = userdate($infodates->feedbackdate, $dateoneday);
-                    } else {
-                        $infodates->feedbackdate = 0;
-                        $infodates->feedbackdateformated = get_string('automaticgrade', 'report_courseagenda');
+                    // Check activity extension dates.
+                    $extensions = self::get_activityextensions($mod, $user, $usergroups);
+
+                    $cmdata->extensions = [];
+                    foreach ($extensions as $extension) {
+                        $extension = userdate($extension, $dateshort);
+                        $cmdata->extensions[] = get_string('extensiondate', 'report_courseagenda', $extension);
                     }
 
                     if ($mod->available == 0 || $infodates->from > time()) {
@@ -659,43 +664,26 @@ class controller {
                         }
                     }
 
+                    if (empty($infodates->from)) {
+                        $infodates->from = $course->startdate;
+                    }
+
                     $infostate = null;
-                    $infodate = '';
+                    $infodatefrom = $infodates->from;
+                    $infodateuntil = $infodates->until;
                     switch ($cmdata->state) {
                         case self::STATE_PENDING:
                         case self::STATE_RETARDED:
                             $infostate = ($infodates->until - time()) / (60 * 60 * 24);
                             $infostate = round($infostate);
 
+                            if ($infostate <= $reportconfig->daystosendactivity) {
+                                $cmdata->fullstatename = get_string('fullstate_pendingdays', 'report_courseagenda', $infostate);
+                            }
                             break;
                         case self::STATE_UNDELIVERED:
                             break;
                         case self::STATE_BLOCKED:
-                            if (empty($infodates->from)) {
-                                $infodates->from = $course->startdate;
-                            }
-
-                            if (empty($infodates->until)) {
-                                $infodates->until = $course->enddate;
-                            }
-
-                            if (empty($infodates->until)) {
-                                $a = $infodates->from;
-                                $cmdata->activityinfodatelabel = get_string('infodate_blockedfrom', 'report_courseagenda', $a);
-                            } else if (date('Y-m-d', $infodates->from) === date('Y-m-d', $infodates->until)) {
-                                $b = new \stdClass();
-                                $b->from = userdate($infodates->from, $timeformat);
-                                $b->until = userdate($infodates->until, $timeformat);
-                                $hours = get_string('timehoursrange', 'report_courseagenda', $b);
-                                $a = userdate($infodates->from, $timedateshort) . ' ' . $hours;
-                                $cmdata->activityinfodatelabel = get_string('infodate_blockedone', 'report_courseagenda', $a);
-                            } else {
-                                $a = new \stdClass();
-                                $a->from = userdate($infodates->from, $timedateshort);
-                                $a->until = userdate($infodates->until, $timedateshort);
-                                $cmdata->activityinfodatelabel = get_string('infodate_blocked', 'report_courseagenda', $a);
-                            }
-
                             break;
                         case self::STATE_DELIVERED:
                             break;
@@ -704,19 +692,21 @@ class controller {
                         case self::STATE_FAILED:
                             break;
                         case self::STATE_COMPLETED:
-                            $infodate = userdate($completionmodules[$mod->id]->timemodified);
+                            $infodateuntil = userdate($completionmodules[$mod->id]->timemodified);
                             break;
-
                     }
 
+                    if (empty($cmdata->fullstatename)) {
+                        // phpcs:ignore
+                        // Mdlcode assume: $cmdata->state ['active', 'blocked', 'pending', 'completed', 'approved', 'failed', 'delivered', 'undelivered', 'retarded'].
+                        $cmdata->fullstatename = get_string('fullstate_' . $cmdata->state, 'report_courseagenda');
+                    }
                     // phpcs:ignore
                     // Mdlcode assume: $cmdata->state ['active', 'blocked', 'pending', 'completed', 'approved', 'failed', 'delivered', 'undelivered', 'retarded'].
-                    $cmdata->fullstatename = get_string('fullstate_' . $cmdata->state, 'report_courseagenda', $infostate);
                     $cmdata->statename = get_string('state_' . $cmdata->state, 'report_courseagenda');
 
-                    if (empty($cmdata->activityinfodatelabel)) {
-                        $cmdata->activityinfodatelabel = get_string('infodate_' . $cmdata->state, 'report_courseagenda', $infodate);
-                    }
+                    $label = self::get_activityinfodatelabel($cmdata->state, $infodatefrom, $infodateuntil);
+                    $cmdata->activityinfodatelabel = $label;
 
                     if ($completioninfo->is_enabled($mod) !== COMPLETION_TRACKING_NONE) {
                         $cmdata->hascompletion = true;
@@ -734,6 +724,7 @@ class controller {
                     $cmdata->showgrade = false;
                     $cmdata->weighing = '0%';
 
+                    $modgraded = false;
                     if ($cmdata->gradeitem) {
                         $cmdata->currentgrade = [];
                         $weighing = 0;
@@ -754,6 +745,7 @@ class controller {
                                 } else {
                                     $currentgrade->pass = $gradeitem->info->graderaw >= $reportconfig->gradetopass;
                                 }
+                                $modgraded = true;
                             }
 
                             $cmdata->currentgrade[] = $currentgrade;
@@ -764,9 +756,22 @@ class controller {
                         $cmdata->weighing .= '%';
 
                     }
+
+                    if (!$modgraded) {
+                        if (self::require_feedbackgrade($mod, $user)) {
+                            $infodates->feedbackdate = $infodates->until + $daystograde;
+                            $infodates->feedbackdateformated = userdate($infodates->feedbackdate, $dateoneday);
+                        } else {
+                            $infodates->feedbackdate = 0;
+                            $infodates->feedbackdateformated = get_string('automaticgrade', 'report_courseagenda');
+                        }
+                    } else {
+                        $infodates->feedbackdate = 0;
+                        $infodates->feedbackdateformated = get_string('graded', 'report_courseagenda');
+                    }
                     // End of Grade information.
 
-                    // Start module availability.
+                    // Module availability.
                     $cmdata->restrictions = self::get_activityrestrictions($mod);
 
                     $section->activities[] = $cmdata;
@@ -1062,10 +1067,10 @@ class controller {
      * Return if the activity requires a feedback grade.
      *
      * @param \cm_info $mod The course module info.
-     * @param array|null $modgrades The activity grades.
+     * @param object $user The user object.
      * @return bool If the activity requires a feedback grade.
      */
-    public static function require_feedbackgrade(\cm_info $mod, ?array $modgrades): bool {
+    public static function require_feedbackgrade(\cm_info $mod, object $user): bool {
         global $DB;
 
         $coursemodules = self::get_coursemodules($mod->course);
@@ -1085,8 +1090,14 @@ class controller {
                 // ToDo: validar si la lección tiene algo que deba ser valificado por el profesor.
                 return $hasadvancedgrading;
             case 'quiz':
-                // ToDo: hay que validar si el cuestionario tiene preguntas tipo ensayo.
-                return true;
+                $params = [
+                    'userid' => $user->id,
+                    'quiz' => $mod->instance,
+                    'sumgrades' => null,
+                    'state' => 'finished',
+                ];
+                $attempts = $DB->count_records('quiz_attempts', $params);
+                return $attempts > 0;
             case 'workshop':
                 return $hasadvancedgrading;
         }
@@ -1135,6 +1146,177 @@ class controller {
 
         return $OUTPUT->render($availability);
 
+    }
+
+    /**
+     * Return the activity extensions for the user (by user and by group), if any.
+     *
+     * @param \cm_info $mod The course module info.
+     * @param object $user The user object.
+     * @param array $groups The user groups.
+     * @return array The activity extensions for the user.
+     */
+    public static function get_activityextensions(\cm_info $mod, object $user, array $groups): array {
+        global $DB;
+
+        $extensions = [];
+
+        $idgroupslist = '';
+        if (!empty($groups)) {
+            $groupids = array_keys($groups);
+            $idgroupslist = implode(',', $groupids);
+        }
+
+        switch ($mod->modname) {
+            case 'assign':
+                $params = [
+                    'userid' => $user->id,
+                    'assignment' => $mod->instance,
+                ];
+                $extensions = $DB->get_records_menu('assign_user_flags', $params, 'extensionduedate', 'id, extensionduedate');
+
+                $sql = "SELECT id, duedate
+                        FROM {assign_overrides}
+                        WHERE assignid = :assignment AND ";
+
+                if (!empty($idgroupslist)) {
+                    $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                } else {
+                    $sql .= "userid = :userid";
+                }
+
+                $sql .= " ORDER BY duedate";
+
+                $extensionsassign = $DB->get_records_sql($sql, $params);
+
+                foreach ($extensionsassign as $extension) {
+                    $extensions[] = $extension->duedate;
+                }
+                break;
+            case 'lesson':
+                $params = [
+                    'userid' => $user->id,
+                    'lessonid' => $mod->instance,
+                ];
+                $sql = "SELECT id, timelimit
+                        FROM {lesson_overrides}
+                        WHERE lessonid = :lessonid AND ";
+
+                if (!empty($idgroupslist)) {
+                    $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                } else {
+                    $sql .= "userid = :userid";
+                }
+
+                $sql .= " ORDER BY timelimit";
+
+                $extensionslesson = $DB->get_records_sql($sql, $params);
+
+                foreach ($extensionslesson as $extension) {
+                    $extensions[] = $extension->timelimit;
+                }
+                break;
+            case 'quiz':
+                $params = [
+                    'userid' => $user->id,
+                    'quiz' => $mod->instance,
+                ];
+                $sql = "SELECT id, timeclose
+                        FROM {quiz_overrides}
+                        WHERE quiz = :quiz AND ";
+
+                if (!empty($idgroupslist)) {
+                    $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                } else {
+                    $sql .= "userid = :userid";
+                }
+
+                $sql .= " ORDER BY timeclose";
+
+                $extensionsquiz = $DB->get_records_sql($sql, $params);
+
+                foreach ($extensionsquiz as $extension) {
+                    $extensions[] = $extension->timeclose;
+                }
+
+                break;
+        }
+
+
+        return $extensions;
+    }
+
+    /**
+     * Return the information about the activity state dates.
+     *
+     * @param string $state The state.
+     * @param int $from The from date.
+     * @param int $until The until date.
+     * @return string The information about the activity state dates.
+     */
+    public static function get_activityinfodatelabel(string $state, int $from, int $until): string {
+        $label = '';
+
+        $strftimedate = get_string('strftimedateshort', 'langconfig');
+        $strftimerecent = get_string('strftimerecent', 'langconfig');
+        $timeformat = get_string('strftimetime24', 'langconfig');
+
+        if (!empty($until) && $until < time()) {
+            $langkey = 'infodate_expired';
+        } else {
+
+            switch ($state) {
+                case 'active':
+                case 'pending':
+                case 'blocked':
+                case 'retarded':
+                    $langkey = 'infodate_available';
+                    break;
+                case 'approved':
+                case 'completed':
+                case 'delivered':
+                    $langkey = 'infodate_delivered';
+                    break;
+                case 'failed':
+                case 'undelivered':
+                    $langkey = 'infodate_expired';
+                    break;
+            }
+        }
+
+        if (!$langkey) {
+            return '';
+        }
+
+        if (empty($until)) {
+            $from = userdate($from, $strftimerecent);
+            // phpcs:ignore
+            // Mdlcode assume: $state ['infodate_available', 'infodate_delivered', 'infodate_expired'].
+            $label = get_string($langkey . '_from', 'report_courseagenda', $from);
+        } else if ($from < time()) {
+            $until = userdate($until, $strftimerecent);
+            // phpcs:ignore
+            // Mdlcode assume: $state ['infodate_available', 'infodate_delivered', 'infodate_expired'].
+            $label = get_string($langkey . '_until', 'report_courseagenda', $until);
+        } else if (date('Y-m-d', $from) === date('Y-m-d', $until)) {
+            $b = new \stdClass();
+            $b->from = userdate($from, $timeformat);
+            $b->until = userdate($until, $timeformat);
+            $hours = get_string('timehoursrange', 'report_courseagenda', $b);
+            $a = userdate($from, $strftimedate) . ' ' . $hours;
+            // phpcs:ignore
+            // Mdlcode assume: $state ['infodate_available', 'infodate_delivered', 'infodate_expired'].
+            $label = get_string($langkey . '_on', 'report_courseagenda', $a);
+        } else {
+            $a = new \stdClass();
+            $a->from = userdate($from, $strftimedate);
+            $a->until = userdate($until, $strftimedate);
+            // phpcs:ignore
+            // Mdlcode assume: $state ['infodate_available', 'infodate_delivered', 'infodate_expired'].
+            $label = get_string($langkey . '_between', 'report_courseagenda', $a);
+        }
+
+        return $label;
     }
 
 }

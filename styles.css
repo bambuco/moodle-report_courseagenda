@@ -699,13 +699,10 @@
 
 }
 
-/*Icon Lock*/
-.path-report-courseagenda .mag-detailed_lock-icon {
-    color: #328094;
-}
-
 /*Text lock*/
 .path-report-courseagenda .mag-detailed_text-lock {
+    border-top: 1px solid #ccc;
+    padding: 5px 0;
     color: #328094;
     font-weight: normal;
 }
@@ -713,12 +710,7 @@
 /*span lock*/
 .path-report-courseagenda .mag-detailed_text-lock span {
     font-weight: 750;
-}
-
-/*Line section*/
-.path-report-courseagenda .mag-section_line {
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 5px;
+    padding-left: 5px;
 }
 
 /*Restriction activity*/
