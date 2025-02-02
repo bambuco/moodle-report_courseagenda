@@ -165,14 +165,14 @@
                                     <div class="mag-detailed_completion-lists">
                                         <div class="mag-detailed_container-list">
                                             {{#infodates}}
-                                            <span>
-                                                {{#str}} deadlinedelivery, report_courseagenda {{/str}} <b>{{untilformated}}</b>
-                                            </span>
-                                            {{#feedbackdateformated}}
                                                 <span>
-                                                    {{#str}} feedbackdate, report_courseagenda {{/str}} <b>{{.}}</b>
+                                                    {{#str}} deadlinedelivery, report_courseagenda {{/str}} <b>{{untilformated}}</b>
                                                 </span>
-                                            {{/feedbackdateformated}}
+                                                {{#feedbackdateformated}}
+                                                    <span class="{{#feedbackdateexpired}}mag-span-retarded{{/feedbackdateexpired}}">
+                                                        {{#str}} feedbackdate, report_courseagenda {{/str}} <b>{{.}}</b>
+                                                    </span>
+                                                {{/feedbackdateformated}}
                                             {{/infodates}}
                                             <span>
                                                 {{#str}} activitytype, report_courseagenda {{/str}} <b>{{activitytype}}</b>
@@ -185,9 +185,18 @@
                                         <div class="mag-detailed_info-text-status">
                                             {{#str}} completionconditions, report_courseagenda {{/str}}
                                         </div>
-                                        <div class="mag-detailed_completion-lists">
+                                        <div class="mag-detailed_completion-lists" role="list" aria-label="{{#str}} completionconditions, report_courseagenda {{/str}}">
                                             <div class="mag-detailed_container-list">
-                                                {{{.}}}
+                                                {{#isautomatic}}
+                                                    {{#completiondetails}}
+                                                        {{> core_course/completion_automatic }}
+                                                    {{/completiondetails}}
+                                                {{/isautomatic}}
+                                                {{^isautomatic}}
+                                                    {{#showmanualcompletion}}
+                                                        {{> core_course/completion_manual }}
+                                                    {{/showmanualcompletion}}
+                                                {{/isautomatic}}
                                             </div>
                                         </div>
                                     {{/completion}}

@@ -17,6 +17,8 @@
 namespace report_courseagenda\local;
 
 use core_grades\component_gradeitems;
+use \context_course;
+
 /**
  * Class controller
  *
@@ -388,7 +390,7 @@ class controller {
                 'color' => '#3593ab',
             ],
             self::STATE_DELIVERED => [
-                'icon' => 'tool_policy:pending',
+                'icon' => 'core:e/insert_time',
                 'color' => '#3593ab',
             ],
             self::STATE_FAILED => [
@@ -487,7 +489,7 @@ class controller {
             $course = $DB->get_record('course', ['id' => $course], '*', MUST_EXIST);
         }
 
-        $context = \context_course::instance($course->id);
+        $context = context_course::instance($course->id);
         $courseformat = course_get_format($course->id);
         $course = $courseformat->get_course();
         // phpcs:ignore
@@ -619,6 +621,7 @@ class controller {
                     $cmdata->enabled = $completioninfo->is_enabled($mod);
                     $cmdata->activityinfodatelabel = '';
                     $cmdata->modurl = new \moodle_url('/mod/' . $mod->modname . '/view.php', ['id' => $mod->id]);
+                    $cmdata->pass = null;
 
                     // phpcs:ignore
                     // Mdlcode assume: $moduletype ['assign', 'book', 'data'].
@@ -646,7 +649,7 @@ class controller {
                     }
 
                     if (!$notcompletion && isset($completionmodules[$mod->id])) {
-                        switch ($completionmodules[$mod->id]) {
+                        switch ($completionmodules[$mod->id]->completionstate) {
                             case COMPLETION_INCOMPLETE:
                                 $cmdata->state = self::STATE_PENDING;
                                 break;
@@ -660,7 +663,6 @@ class controller {
                             case COMPLETION_COMPLETE_FAIL:
                                 $cmdata->state = self::STATE_FAILED;
                                 break;
-
                         }
                     }
 
@@ -668,6 +670,107 @@ class controller {
                         $infodates->from = $course->startdate;
                     }
 
+                    if ($completioninfo->is_enabled($mod) !== COMPLETION_TRACKING_NONE) {
+                        $cmdata->hascompletion = true;
+                        $cmdata->completed = $DB->get_record('course_modules_completion',
+                                                    ['coursemoduleid' => $mod->id, 'userid' => $user->id, 'completionstate' => 1]);
+
+                        $cmdata->showcompletionconditions = $course->showcompletionconditions == COMPLETION_SHOW_CONDITIONS;
+
+                    }
+
+                    // Start Grade information.
+                    $cmdata->gradeitem = $gradeitem;
+                    $cmdata->showgrade = false;
+                    $cmdata->weighing = '0%';
+
+                    $modgraded = false;
+                    $requiregrade = false;
+                    if ($cmdata->gradeitem) {
+                        $cmdata->currentgrade = [];
+                        $weighing = 0;
+                        $pass = [];
+                        foreach ($cmdata->gradeitem as $gradeitem) {
+                            $currentgrade = new \stdClass();
+                            $currentgrade->weighing = $gradeitem->info->weightformatted;
+                            $currentgrade->grademethod = $availablemethods[$gradeitem->info->grademethod] ?? '';
+
+                            // To calculate the general activity weighing.
+                            $weighing += $gradeitem->info->weightraw;
+
+                            if ($gradeitem->info->gradeformatted != '-') {
+                                $cmdata->showgrade = true;
+                                $currentgrade->value = $gradeitem->info->visible ? $gradeitem->info->gradeformatted : '-';
+
+                                if ($gradeitem->item->gradepass && (float)$gradeitem->item->gradepass > 0) {
+                                    $currentgrade->pass = $gradeitem->info->graderaw >= (float)$gradeitem->item->gradepass;
+                                } else {
+                                    $currentgrade->pass = $gradeitem->info->graderaw >= $reportconfig->gradetopass;
+                                }
+                                $modgraded = true;
+
+                                $pass[] = $currentgrade->pass;
+                            }
+
+                            $cmdata->currentgrade[] = $currentgrade;
+                        }
+
+                        // If all the grades are passed.
+                        if (count($pass) == count($cmdata->currentgrade)) {
+                            $cmdata->pass = array_sum($pass) == count($pass);
+                        } else {
+                            $requiregrade = true;
+                        }
+
+                        $cmdata->weighing = !empty($cmdata->gradeitem) ? $weighing : 0;
+                        $cmdata->weighing = round($cmdata->weighing * 100, 0);
+                        $cmdata->weighing .= '%';
+
+                    }
+
+                    if (!$modgraded || $requiregrade) {
+                        if (self::require_feedbackgrade($mod, $user)) {
+                            $infodates->feedbackdate = $infodates->until + $daystograde;
+                            $infodates->feedbackdateformated = userdate($infodates->feedbackdate, $dateoneday);
+                            $infodates->feedbackdateexpired = $infodates->feedbackdate < time();
+                        } else {
+                            $infodates->feedbackdate = 0;
+                            $infodates->feedbackdateformated = get_string('automaticgrade', 'report_courseagenda');
+                        }
+
+                        // Not graded but delivered.
+                        $delivered = self::activitydelivered($mod, $user);
+                        if ($delivered) {
+                            $cmdata->state = self::STATE_DELIVERED;
+                        }
+                    } else {
+                        $infodates->feedbackdate = 0;
+                        $infodates->feedbackdateformated = get_string('graded', 'report_courseagenda');
+
+                        if ($cmdata->pass === true) {
+                            $cmdata->state = self::STATE_APPROVED;
+                        } else if ($cmdata->pass === false) {
+                            $cmdata->state = self::STATE_FAILED;
+                        } else {
+                            $cmdata->state = self::STATE_COMPLETED;
+                        }
+                    }
+                    // End of Grade information.
+
+                    if (($cmdata->state == self::STATE_PENDING || $cmdata->state == self::STATE_ACTIVE)
+                            && $infodates->until < time()) {
+
+                        // ToDo: Validar si todavía se puede enviar. Si todavía se puede es STATE_RETARDED sino STATE_UNDELIVERED.
+                        $cmdata->state = self::STATE_UNDELIVERED;
+                    }
+
+                    // Module availability.
+                    $cmdata->restrictions = self::get_activityrestrictions($mod);
+
+                    // Module completion conditions.
+                    $cmdata->completion = self::get_activitycompletionconditions($mod, $user);
+
+                    // Changes according to the state.
                     $infostate = null;
                     $infodatefrom = $infodates->from;
                     $infodateuntil = $infodates->until;
@@ -692,7 +795,6 @@ class controller {
                         case self::STATE_FAILED:
                             break;
                         case self::STATE_COMPLETED:
-                            $infodateuntil = userdate($completionmodules[$mod->id]->timemodified);
                             break;
                     }
 
@@ -708,71 +810,7 @@ class controller {
                     $label = self::get_activityinfodatelabel($cmdata->state, $infodatefrom, $infodateuntil);
                     $cmdata->activityinfodatelabel = $label;
 
-                    if ($completioninfo->is_enabled($mod) !== COMPLETION_TRACKING_NONE) {
-                        $cmdata->hascompletion = true;
-                        $cmdata->completed = $DB->get_record('course_modules_completion',
-                                                    ['coursemoduleid' => $mod->id, 'userid' => $user->id, 'completionstate' => 1]);
-
-                        $cmdata->showcompletionconditions = $course->showcompletionconditions == COMPLETION_SHOW_CONDITIONS;
-
-                    }
-
                     $cmdata->stateicon = self::get_state_iconhtml($cmdata->state);
-
-                    // Start Grade information.
-                    $cmdata->gradeitem = $gradeitem;
-                    $cmdata->showgrade = false;
-                    $cmdata->weighing = '0%';
-
-                    $modgraded = false;
-                    if ($cmdata->gradeitem) {
-                        $cmdata->currentgrade = [];
-                        $weighing = 0;
-                        foreach ($cmdata->gradeitem as $gradeitem) {
-                            $currentgrade = new \stdClass();
-                            $currentgrade->weighing = $gradeitem->info->weightformatted;
-                            $currentgrade->grademethod = $availablemethods[$gradeitem->info->grademethod] ?? '';
-
-                            // To calculate the general activity weighing.
-                            $weighing += $gradeitem->info->weightraw;
-
-                            if ($gradeitem->info->gradeformatted != '-') {
-                                $cmdata->showgrade = true;
-                                $currentgrade->value = $gradeitem->info->visible ? $gradeitem->info->gradeformatted : '-';
-
-                                if ($gradeitem->item->gradepass && (float)$gradeitem->item->gradepass > 0) {
-                                    $currentgrade->pass = $gradeitem->info->graderaw >= (float)$gradeitem->item->gradepass;
-                                } else {
-                                    $currentgrade->pass = $gradeitem->info->graderaw >= $reportconfig->gradetopass;
-                                }
-                                $modgraded = true;
-                            }
-
-                            $cmdata->currentgrade[] = $currentgrade;
-                        }
-
-                        $cmdata->weighing = !empty($cmdata->gradeitem) ? $weighing : 0;
-                        $cmdata->weighing = round($cmdata->weighing * 100, 0);
-                        $cmdata->weighing .= '%';
-
-                    }
-
-                    if (!$modgraded) {
-                        if (self::require_feedbackgrade($mod, $user)) {
-                            $infodates->feedbackdate = $infodates->until + $daystograde;
-                            $infodates->feedbackdateformated = userdate($infodates->feedbackdate, $dateoneday);
-                        } else {
-                            $infodates->feedbackdate = 0;
-                            $infodates->feedbackdateformated = get_string('automaticgrade', 'report_courseagenda');
-                        }
-                    } else {
-                        $infodates->feedbackdate = 0;
-                        $infodates->feedbackdateformated = get_string('graded', 'report_courseagenda');
-                    }
-                    // End of Grade information.
-
-                    // Module availability.
-                    $cmdata->restrictions = self::get_activityrestrictions($mod);
 
                     $section->activities[] = $cmdata;
                 }
@@ -1106,6 +1144,48 @@ class controller {
     }
 
     /**
+     * Return the conditions to complete the activity.
+     *
+     * @param \cm_info $mod The course module info.
+     * @param object $user The user object.
+     * @return array The course module restrictions.
+     */
+    public static function get_activitycompletionconditions(\cm_info $mod, $user): array {
+        global $OUTPUT;
+
+        $completiondetails = \core_completion\cm_completion_details::get_instance($mod, $user->id);
+
+        $activitycompletion = new \core_course\output\activity_completion($mod, $completiondetails);
+        $activitycompletiondata = (array) $activitycompletion->export_for_template($OUTPUT);
+
+        if (!$activitycompletiondata['hascompletion']) {
+            return [];
+        }
+
+        return $activitycompletiondata;
+    }
+
+    /**
+     * Return the activity dates.
+     *
+     * Not used at the moment, the functionality was implemented with activity_enabledate but Moodle's own functions are used here.
+     * This should be considered later in case inconsistencies in dates are found.
+     *
+     * @param \cm_info $mod The course module info.
+     * @param object $user The user object.
+     * @return array The activity dates.
+     */
+    public static function get_activitydates(\cm_info $mod, $user): array {
+        global $OUTPUT;
+
+        $activitydates = \core\activity_dates::get_dates_for_module($mod, $user->id);
+        $activitydates = new \core_course\output\activity_dates($activitydates);
+        $activitydatesdata = (array) $activitydates->export_for_template($OUTPUT);
+
+        return $activitydatesdata;
+    }
+
+    /**
      * Return the course module restrictions.
      *
      * @param \cm_info $mod The course module info.
@@ -1242,7 +1322,6 @@ class controller {
                 break;
         }
 
-
         return $extensions;
     }
 
@@ -1317,6 +1396,97 @@ class controller {
         }
 
         return $label;
+    }
+
+    /**
+     * Check if the activity was delivered by the user.
+     *
+     * @param \cm_info $mod The course module info.
+     * @param object $user The user object.
+     * @return bool If the activity was delivered by the user.
+     */
+    public static function activitydelivered($mod, $user): bool {
+        global $DB;
+
+        $delivered = false;
+
+        switch ($mod->modname) {
+            case 'assign':
+                $params = [
+                    'userid' => $user->id,
+                    'assignment' => $mod->instance,
+                    'status' => 'submitted',
+                ];
+                $delivered = $DB->record_exists('assign_submission', $params);
+                break;
+            case 'data':
+                $params = [
+                    'userid' => $user->id,
+                    'dataid' => $mod->instance,
+                ];
+                $delivered = $DB->record_exists('data_records', $params);
+                break;
+            case 'feedback':
+                $params = [
+                    'userid' => $user->id,
+                    'feedback' => $mod->instance,
+                ];
+                $delivered = $DB->record_exists('feedback_completed', $params);
+                break;
+            case 'forum':
+                $params = [
+                    'userid' => $user->id,
+                    'forumid' => $mod->instance,
+                ];
+                $sql = "SELECT p.id
+                        FROM {forum_posts} p
+                        JOIN {forum_discussions} d ON d.forum = :forumid AND d.id = p.discussion AND p.userid = :userid";
+                $delivered = $DB->record_exists_sql($sql, $params);
+                break;
+            case 'glossary':
+                $params = [
+                    'userid' => $user->id,
+                    'glossaryid' => $mod->instance,
+                ];
+                $delivered = $DB->record_exists('glossary_entries', $params);
+            case 'lesson':
+                $params = [
+                    'userid' => $user->id,
+                    'lessonid' => $mod->instance,
+                ];
+                $delivered = $DB->record_exists('lesson_attempts', $params);
+                break;
+            case 'quiz':
+                $params = [
+                    'userid' => $user->id,
+                    'quiz' => $mod->instance,
+                    'state' => 'finished',
+                ];
+                $delivered = $DB->record_exists('quiz_attempts', $params);
+                break;
+            case 'scorm':
+                $params = [
+                    'userid' => $user->id,
+                    'scormid' => $mod->instance,
+                ];
+                $sql = "SELECT sa.id
+                        FROM {scorm_attempt} sa
+                        INNER JOIN {scorm_scoes_value} sv ON sa.scormid = :scormid
+                            AND sv.value IN ('passed', 'completed', 'failed')
+                            AND sa.userid = :userid
+                            AND sa.id = sv.attemptid";
+                $delivered = $DB->record_exists_sql($sql, $params);
+                break;
+            case 'workshop':
+                $params = [
+                    'authorid' => $user->id,
+                    'workshopid' => $mod->instance,
+                ];
+                $delivered = $DB->record_exists('workshop_submissions', $params);
+                break;
+        }
+
+        return $delivered;
     }
 
 }
