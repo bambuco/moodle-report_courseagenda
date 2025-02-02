@@ -17,7 +17,6 @@
 namespace report_courseagenda\local;
 
 use core_grades\component_gradeitems;
-use \context_course;
 
 /**
  * Class controller
@@ -489,7 +488,7 @@ class controller {
             $course = $DB->get_record('course', ['id' => $course], '*', MUST_EXIST);
         }
 
-        $context = context_course::instance($course->id);
+        $context = \context_course::instance($course->id);
         $courseformat = course_get_format($course->id);
         $course = $courseformat->get_course();
         // phpcs:ignore
