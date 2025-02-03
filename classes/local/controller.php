@@ -102,6 +102,25 @@ class controller {
     private static $activitiesgrades = [];
 
     /**
+     * @var array The deliverable modules supported list.
+     */
+    private const DELIVERABLE_ACTIVITIES = [
+        'assign',
+        'choice',
+        'data',
+        'feedback',
+        'forum',
+        'glossary',
+        'h5pactivity',
+        'lesson',
+        'quiz',
+        'scorm',
+        'survey',
+        'wiki',
+        'workshop',
+    ];
+
+    /**
      * Return the modules in the platform.
      *
      * @param bool $onlyvisible If true, only the visible modules will be returned.
@@ -112,6 +131,11 @@ class controller {
 
         if (empty(self::$modules)) {
             self::$modules = $DB->get_records('modules');
+
+            foreach (self::$modules as $module) {
+                $module->gradable = (bool)plugin_supports('mod', $module->name, FEATURE_GRADE_HAS_GRADE);
+                $module->deliverable = in_array($module->name, self::DELIVERABLE_ACTIVITIES);
+            }
         }
 
         if ($onlyvisible) {
@@ -258,6 +282,10 @@ class controller {
 
         if (is_numeric($course)) {
             $course = $DB->get_record('course', ['id' => $course], '*', MUST_EXIST);
+        }
+
+        if (!$course->enablecompletion) {
+            return null;
         }
 
         if (empty($userid)) {
@@ -508,6 +536,7 @@ class controller {
         $includesection0 = $reportconfig->includesection0;
 
         $completioninfo = new \completion_info($course);
+        $hascompletion = $course->enablecompletion && $completioninfo->is_tracked_user($user->id);
 
         $excludemodules = trim($reportconfig->excludemodules);
         $excludemodules = explode(',', $excludemodules);
@@ -598,7 +627,7 @@ class controller {
                     }
 
                     $mod = $modinfo->cms[$modnumber];
-                    $moduletype = $modules[$mod->module]->name;
+                    $moduletype = $modules[$mod->module];
 
                     if (in_array($mod->modname, $excludemodules)) {
                         continue;
@@ -609,7 +638,7 @@ class controller {
                         $notcompletion = true;
                     }
 
-                    $gradeitem = $activitiesgrades[$moduletype . '-' . $mod->instance] ?? null;
+                    $gradeitem = $activitiesgrades[$moduletype->name . '-' . $mod->instance] ?? null;
 
                     $cmdata = new \stdClass();
                     $cmdata->instancename = format_string($mod->name, true, $course->id);
@@ -621,10 +650,13 @@ class controller {
                     $cmdata->activityinfodatelabel = '';
                     $cmdata->modurl = new \moodle_url('/mod/' . $mod->modname . '/view.php', ['id' => $mod->id]);
                     $cmdata->pass = null;
+                    $cmdata->deliverable = $moduletype->deliverable;
+                    $cmdata->delivered = false;
+                    $cmdata->delivereddate = 0;
 
                     // phpcs:ignore
-                    // Mdlcode assume: $moduletype ['assign', 'book', 'data'].
-                    $cmdata->activitytype = get_string('pluginname', $moduletype);
+                    // Mdlcode assume: $moduletype->name ['assign', 'book', 'data'].
+                    $cmdata->activitytype = get_string('pluginname', $moduletype->name);
 
                     $infodates = self::activity_enabledate($mod);
                     $cmdata->infodates = $infodates;
@@ -632,7 +664,8 @@ class controller {
                     if (!$infodates->until) {
                         $infodates->until = $course->enddate;
                     }
-                    $infodates->untilformated = userdate($infodates->until, $dateshort);
+                    $infodates->untilformated = empty($infodates->until) ? get_string('notuntil', 'report_courseagenda')
+                                                                         : userdate($infodates->until, $dateshort);
 
                     // Check activity extension dates.
                     $extensions = self::get_activityextensions($mod, $user, $usergroups);
@@ -669,13 +702,12 @@ class controller {
                         $infodates->from = $course->startdate;
                     }
 
-                    if ($completioninfo->is_enabled($mod) !== COMPLETION_TRACKING_NONE) {
+                    if ($hascompletion && $completioninfo->is_enabled($mod) !== COMPLETION_TRACKING_NONE) {
                         $cmdata->hascompletion = true;
                         $cmdata->completed = $DB->get_record('course_modules_completion',
                                                     ['coursemoduleid' => $mod->id, 'userid' => $user->id, 'completionstate' => 1]);
 
                         $cmdata->showcompletionconditions = $course->showcompletionconditions == COMPLETION_SHOW_CONDITIONS;
-
                     }
 
                     // Start Grade information.
@@ -724,24 +756,32 @@ class controller {
                         $cmdata->weighing = !empty($cmdata->gradeitem) ? $weighing : 0;
                         $cmdata->weighing = round($cmdata->weighing * 100, 0);
                         $cmdata->weighing .= '%';
+                    }
 
+                    // Delivered information.
+                    if ($moduletype->deliverable) {
+                        $cmdata->delivereddate = self::activitydelivered($mod, $user);
+                        if ($cmdata->delivereddate) {
+                            $cmdata->delivered = true;
+                        }
                     }
 
                     if (!$modgraded || $requiregrade) {
-                        if (self::require_feedbackgrade($mod, $user)) {
+                        if ($requiregrade && self::require_feedbackgrade($mod, $user)) {
                             $infodates->feedbackdate = $infodates->until + $daystograde;
                             $infodates->feedbackdateformated = userdate($infodates->feedbackdate, $dateoneday);
                             $infodates->feedbackdateexpired = $infodates->feedbackdate < time();
+                            $requiregrade = true;
                         } else {
                             $infodates->feedbackdate = 0;
                             $infodates->feedbackdateformated = get_string('automaticgrade', 'report_courseagenda');
                         }
 
                         // Not graded but delivered.
-                        $delivered = self::activitydelivered($mod, $user);
-                        if ($delivered) {
-                            $cmdata->state = self::STATE_DELIVERED;
+                        if ($cmdata->delivered) {
+                            $cmdata->state = $requiregrade ? self::STATE_DELIVERED : self::STATE_COMPLETED;
                         }
+
                     } else {
                         $infodates->feedbackdate = 0;
                         $infodates->feedbackdateformated = get_string('graded', 'report_courseagenda');
@@ -750,17 +790,22 @@ class controller {
                             $cmdata->state = self::STATE_APPROVED;
                         } else if ($cmdata->pass === false) {
                             $cmdata->state = self::STATE_FAILED;
-                        } else {
+                        } else if ($cmdata->delivered) {
                             $cmdata->state = self::STATE_COMPLETED;
                         }
                     }
                     // End of Grade information.
 
-                    if (($cmdata->state == self::STATE_PENDING || $cmdata->state == self::STATE_ACTIVE)
+                    if ($moduletype->deliverable
+                            && ($cmdata->state == self::STATE_PENDING || $cmdata->state == self::STATE_ACTIVE)
+                            && $infodates->until > 0
                             && $infodates->until < time()) {
 
-                        // ToDo: Validar si todavía se puede enviar. Si todavía se puede es STATE_RETARDED sino STATE_UNDELIVERED.
                         $cmdata->state = self::STATE_UNDELIVERED;
+
+                        if ($infodates->close) {
+                            $cmdata->state = self::STATE_RETARDED;
+                        }
                     }
 
                     // Module availability.
@@ -774,26 +819,24 @@ class controller {
                     $infodatefrom = $infodates->from;
                     $infodateuntil = $infodates->until;
                     switch ($cmdata->state) {
-                        case self::STATE_PENDING:
                         case self::STATE_RETARDED:
                             $infostate = ($infodates->until - time()) / (60 * 60 * 24);
                             $infostate = round($infostate);
 
-                            if ($infostate <= $reportconfig->daystosendactivity) {
+                            if ($infostate < 0 && $infodates->close) {
+                                $closedatef = userdate($infodates->close, $dateoneday);
+                                $cmdata->fullstatename = get_string('fullstate_retardedactive', 'report_courseagenda', $closedatef);
+                            } else if ($infostate <= $reportconfig->daystosendactivity) {
                                 $cmdata->fullstatename = get_string('fullstate_pendingdays', 'report_courseagenda', $infostate);
                             }
                             break;
-                        case self::STATE_UNDELIVERED:
-                            break;
-                        case self::STATE_BLOCKED:
-                            break;
                         case self::STATE_DELIVERED:
-                            break;
                         case self::STATE_APPROVED:
-                            break;
                         case self::STATE_FAILED:
-                            break;
-                        case self::STATE_COMPLETED:
+                            if ($cmdata->delivered) {
+                                $infodatefrom = $cmdata->delivereddate;
+                                $infodateuntil = 0;
+                            }
                             break;
                     }
 
@@ -802,6 +845,7 @@ class controller {
                         // Mdlcode assume: $cmdata->state ['active', 'blocked', 'pending', 'completed', 'approved', 'failed', 'delivered', 'undelivered', 'retarded'].
                         $cmdata->fullstatename = get_string('fullstate_' . $cmdata->state, 'report_courseagenda');
                     }
+
                     // phpcs:ignore
                     // Mdlcode assume: $cmdata->state ['active', 'blocked', 'pending', 'completed', 'approved', 'failed', 'delivered', 'undelivered', 'retarded'].
                     $cmdata->statename = get_string('state_' . $cmdata->state, 'report_courseagenda');
@@ -831,9 +875,11 @@ class controller {
         $dates = (object)[
             'from' => 0,
             'until' => 0,
+            'close' => 0,
         ];
 
-        if (!empty($mod->availablefrom)) {
+        // Check the availability by date. Activity is not available yet.
+        if (!empty($mod->availablefrom) && $mod->availablefrom > time()) {
             $dates->from = $mod->availablefrom;
             return $dates;
         }
@@ -844,6 +890,8 @@ class controller {
             return $dates;
         }
 
+        $course = $mod->get_course();
+
         if (is_array($cmdata)) {
             $cmdata = (object)$cmdata;
         }
@@ -852,6 +900,7 @@ class controller {
             case 'assign':
                 $dates->from = $cmdata->allowsubmissionsfromdate ?? '';
                 $dates->until = $cmdata->duedate ?? '';
+                $dates->close = $cmdata->cutoffdate ?? $course->enddate;
                 break;
             case 'data':
                 $dates->from = $cmdata->timeavailablefrom ?? '';
@@ -863,6 +912,7 @@ class controller {
                 break;
             case 'forum':
                 $dates->until = $cmdata->duedate ?? '';
+                $dates->close = $cmdata->cutoffdate ?? $course->enddate;
                 break;
             case 'lesson':
                 $dates->from = $cmdata->available ?? '';
@@ -880,6 +930,11 @@ class controller {
                 $dates->from = $cmdata->submissionstart ?? '';
                 $dates->until = $cmdata->submissionend ?? '';
                 break;
+        }
+
+        // If the close date is in the past, the activity is considered closed.
+        if ($dates->close < time()) {
+            $dates->close = 0;
         }
 
         return $dates;
@@ -935,8 +990,23 @@ class controller {
             }
             $customgradeinfo = new \stdClass();
             $gradesinfo[$gradeinfokey][] = $customgradeinfo;
+
+            // Basic grade item information.
             $customgradeinfo->info = new \stdClass();
             $customgradeinfo->info->visible = true;
+            $customgradeinfo->info->gradestatus = '';
+            $customgradeinfo->info->gradecontent = '';
+            $customgradeinfo->info->grademethod = '';
+            $customgradeinfo->info->weightformatted = '0%';
+            $customgradeinfo->info->weightraw = 0;
+            $customgradeinfo->info->locked = null;
+            $customgradeinfo->info->overridden = false;
+            $customgradeinfo->info->excluded = false;
+            $customgradeinfo->info->gradehiddenbydate = false;
+            $customgradeinfo->info->gradedatesubmitted = null;
+            $customgradeinfo->info->gradedategraded = null;
+            $customgradeinfo->info->gradeformatted = '-';
+            $customgradeinfo->info->graderaw = 0;
 
             // Process the grade type.
             if (!$gradegrade = \grade_grade::fetch(['itemid' => $gradeitem->id, 'userid' => $user->id])) {
@@ -988,15 +1058,9 @@ class controller {
                 }
             }
 
-            // Basic grade item information.
             $customgradeinfo->info->locked = $canviewall ? $gradegrade->grade_item->is_locked() : null;
             $customgradeinfo->info->overridden = $gradegrade->is_overridden();
             $customgradeinfo->info->excluded = $gradegrade->is_excluded();
-            $customgradeinfo->info->gradestatus = '';
-            $customgradeinfo->info->gradecontent = '';
-            $customgradeinfo->info->grademethod = '';
-            $customgradeinfo->info->weightformatted = '0%';
-            $customgradeinfo->info->weightraw = 0;
 
             // Get the grading area.
             $cm = $coursemodules[$gradeitem->itemmodule . '_' . $gradeitem->iteminstance];
@@ -1402,58 +1466,71 @@ class controller {
      *
      * @param \cm_info $mod The course module info.
      * @param object $user The user object.
-     * @return bool If the activity was delivered by the user.
+     * @return int The activity delivered time or null.
      */
-    public static function activitydelivered($mod, $user): bool {
+    public static function activitydelivered($mod, $user): ?int {
         global $DB;
 
-        $delivered = false;
+        $delivered = null;
 
         switch ($mod->modname) {
             case 'assign':
                 $params = [
                     'userid' => $user->id,
-                    'assignment' => $mod->instance,
-                    'status' => 'submitted',
+                    'assignmentid' => $mod->instance,
                 ];
-                $delivered = $DB->record_exists('assign_submission', $params);
+                $sql = "SELECT MAX(asb.timemodified) AS timecompleted
+                        FROM {assign} a
+                        INNER JOIN {assign_submission} asb ON a.id = :assignmentid AND a.id = asb.assignment
+                        WHERE asb.userid = :userid AND (a.submissiondrafts = 0 OR asb.status = 'submitted')";
+                $delivered = $DB->get_field_sql($sql, $params);
                 break;
             case 'data':
                 $params = [
                     'userid' => $user->id,
                     'dataid' => $mod->instance,
                 ];
-                $delivered = $DB->record_exists('data_records', $params);
+                $sql = "SELECT MAX(timemodified) AS timecompleted
+                        FROM {data_records}
+                        WHERE userid = :userid AND dataid = :dataid";
+                $delivered = $DB->get_field_sql($sql, $params);
                 break;
             case 'feedback':
                 $params = [
                     'userid' => $user->id,
                     'feedback' => $mod->instance,
                 ];
-                $delivered = $DB->record_exists('feedback_completed', $params);
+                $delivered = $DB->get_field('feedback_completed', 'timemodified', $params, IGNORE_MULTIPLE);
                 break;
             case 'forum':
                 $params = [
                     'userid' => $user->id,
                     'forumid' => $mod->instance,
                 ];
-                $sql = "SELECT p.id
+                $sql = "SELECT MAX(p.modified) AS timecompleted
                         FROM {forum_posts} p
                         JOIN {forum_discussions} d ON d.forum = :forumid AND d.id = p.discussion AND p.userid = :userid";
-                $delivered = $DB->record_exists_sql($sql, $params);
+                $delivered = $DB->get_field_sql($sql, $params);
                 break;
             case 'glossary':
                 $params = [
                     'userid' => $user->id,
                     'glossaryid' => $mod->instance,
                 ];
-                $delivered = $DB->record_exists('glossary_entries', $params);
+                $sql = "SELECT MAX(timemodified) AS timecompleted
+                        FROM {glossary_entries}
+                        WHERE userid = :userid AND glossaryid = :glossaryid";
+                $delivered = $DB->get_field_sql($sql, $params);
+                break;
             case 'lesson':
                 $params = [
                     'userid' => $user->id,
                     'lessonid' => $mod->instance,
                 ];
-                $delivered = $DB->record_exists('lesson_attempts', $params);
+                $sql = "SELECT MAX(completed) AS timecompleted
+                        FROM {lesson_grades}
+                        WHERE userid = :userid AND lessonid = :lessonid";
+                $delivered = $DB->get_field_sql($sql, $params);
                 break;
             case 'quiz':
                 $params = [
@@ -1461,28 +1538,45 @@ class controller {
                     'quiz' => $mod->instance,
                     'state' => 'finished',
                 ];
-                $delivered = $DB->record_exists('quiz_attempts', $params);
+                $sql = "SELECT MAX(timemodified) AS timecompleted
+                        FROM {quiz_attempts}
+                        WHERE userid = :userid AND quiz = :quiz AND state = :state";
+                $delivered = $DB->get_field_sql($sql, $params);
                 break;
             case 'scorm':
-                $params = [
-                    'userid' => $user->id,
-                    'scormid' => $mod->instance,
-                ];
-                $sql = "SELECT sa.id
-                        FROM {scorm_attempt} sa
-                        INNER JOIN {scorm_scoes_value} sv ON sa.scormid = :scormid
-                            AND sv.value IN ('passed', 'completed', 'failed')
-                            AND sa.userid = :userid
-                            AND sa.id = sv.attemptid";
-                $delivered = $DB->record_exists_sql($sql, $params);
+                $elementid = $DB->get_field('scorm_element', 'id', ['element' => 'cmi.core.lesson_status']);
+                if ($elementid) {
+                    $params = [
+                        'userid' => $user->id,
+                        'scormid' => $mod->instance,
+                        'elementid' => $elementid,
+                    ];
+                    $sql = "SELECT MAX(sv.timemodified) AS timecompleted
+                            FROM {scorm_attempt} sa
+                            INNER JOIN {scorm_scoes_value} sv ON sa.scormid = :scormid
+                                AND sv.elementid = :elementid
+                                AND sv.value IN ('passed', 'completed', 'failed')
+                                AND sa.userid = :userid
+                                AND sa.id = sv.attemptid";
+                    $delivered = $DB->get_field_sql($sql, $params);
+                } else {
+                    $delivered = false;
+                }
                 break;
             case 'workshop':
                 $params = [
                     'authorid' => $user->id,
                     'workshopid' => $mod->instance,
                 ];
-                $delivered = $DB->record_exists('workshop_submissions', $params);
+                $sql = "SELECT MAX(timemodified) AS timecompleted
+                        FROM {workshop_submissions}
+                        WHERE authorid = :authorid AND workshopid = :workshopid";
+                $delivered = $DB->get_field_sql($sql, $params);
                 break;
+        }
+
+        if (!$delivered) {
+            $delivered = null;
         }
 
         return $delivered;

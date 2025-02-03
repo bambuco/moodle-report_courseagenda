@@ -111,7 +111,9 @@
                             <!-- Dates -->
                             <div class="mag-activity_content-date">
                                 <p>
-                                    {{{activityinfodatelabel}}}
+                                    {{#deliverable}}
+                                        {{{activityinfodatelabel}}}
+                                    {{/deliverable}}
                                 </p>
                             </div>
                             <!-- End of Dates -->
@@ -164,6 +166,7 @@
                                     {{/currentgrade}}
                                     <div class="mag-detailed_completion-lists">
                                         <div class="mag-detailed_container-list">
+                                            {{#deliverable}}
                                             {{#infodates}}
                                                 <span>
                                                     {{#str}} deadlinedelivery, report_courseagenda {{/str}} <b>{{untilformated}}</b>
@@ -174,6 +177,7 @@
                                                     </span>
                                                 {{/feedbackdateformated}}
                                             {{/infodates}}
+                                            {{/deliverable}}
                                             <span>
                                                 {{#str}} activitytype, report_courseagenda {{/str}} <b>{{activitytype}}</b>
                                             </span>

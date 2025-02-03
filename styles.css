@@ -561,6 +561,8 @@
     color: #3593ab;
 }
 
+.path-report-courseagenda .mag-activity_undelivered .mag-state,
+.path-report-courseagenda .mag-activity_failed .mag-state,
 .path-report-courseagenda .mag-activity_retarded .mag-state {
     background: #fff0f3;
     border: solid 1px #ffc4cd;
@@ -792,9 +794,7 @@
     }
 
     .path-report-courseagenda .mag-activity:hover .mag-activity_border-text {
-        padding-left: 8px;
-        padding-right: 8px;
-        width: 55px;
+        width: 70px;
     }
 
 }
