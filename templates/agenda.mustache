@@ -26,7 +26,6 @@
 <div class="mag-container_agenda">
     <div class="mag-header">
         <div class="mag-header_info-course">
-
             <div class="mag-header_info-text">
                 <p class="mag-info-header">
                     {{{reportsummary}}}
@@ -265,10 +264,12 @@
         {{/coursesections}}
     </div>
 </div>
-<style>
-.path-report-courseagenda {
-    {{#specialcolors}}
-        --rag-{{state}}: {{value}};
-    {{/specialcolors}}
-}
-</style>
+<div><!--Used to prevent w3.org validator error with <style> in root body tag.-->
+    <style>
+    .path-report-courseagenda {
+        {{#specialcolors}}
+            --rag-{{state}}: {{value}};
+        {{/specialcolors}}
+    }
+    </style>
+</div>

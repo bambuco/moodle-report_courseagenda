@@ -1635,6 +1635,7 @@ class controller {
      * Return the name of the grade item.
      *
      * @param object $gradeitem The grade item object.
+     * @param bool $multi If false, return the generic weighing name, if true return the name of the item with the module name.
      * @return string The name of the grade item.
      */
     public static function itemname(object $gradeitem, $multi = false): string {
