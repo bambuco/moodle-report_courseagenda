@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['activitytype'] = 'Activity type';
+$string['alertnotgradable'] = 'You don\'t have a gradable role in the course. To view detailed information, select a user who does.';
 $string['allactivities'] = 'All activities';
 $string['automaticgrade'] = 'Automatic grade';
 $string['completionconditions'] = 'Conditions to complete this activity';
@@ -45,6 +46,8 @@ $string['extensiondate'] = 'The activity was extended until <span>{$a}</span>';
 $string['feedbackdate'] = 'Feedback date';
 $string['field_academiccredits'] = 'Academic credits';
 $string['field_academiccredits_help'] = 'A custom field to use for the academic credits in the course.';
+$string['forum_rating'] = 'Rating';
+$string['forum_wholeforum'] = 'Whole forum';
 $string['fullstate_active'] = 'Active';
 $string['fullstate_approved'] = 'Activity approved';
 $string['fullstate_blocked'] = 'Blocked';
@@ -75,6 +78,7 @@ $string['infodate_expired_between'] = 'Expired from <span>{$a->from} to {$a->unt
 $string['infodate_expired_from'] = 'Expired from <span>{$a}</span>';
 $string['infodate_expired_on'] = 'Expired on <span>{$a}</span>';
 $string['infodate_expired_until'] = 'Expired until <span>{$a}</span>';
+$string['noactivitiesinsection'] = 'There are no activities in this section';
 $string['noenddate'] = 'No end date';
 $string['notdefined'] = 'Not defined';
 $string['notuntil'] = 'No end date';
@@ -87,7 +91,7 @@ $string['progresscolors'] = 'Progress colors';
 $string['progresscolors_help'] = 'Select the colors list to use in the progress bar.
 Use the format: <b>color|percentage</b> (one per line).<br>
 Example:<br>#ff0000|33<br>#ffe600|66<br>#00ff00<br>';
-$string['reportsummary'] = 'Hello <span>{$a->userfullname}</span>, this is a course with a duration of <b>{$a->duration} {$a->studytime}</b>, it will be guided by <b>{$a->teacher}</b>. It will begin on <b>{$a->coursestartdate}</b> and end on <b>{$a->courseenddate}</b>.';
+$string['reportsummary'] = 'Hello <span>{$a->userfullname}</span>, this is a course with a duration of <b>{$a->duration}{$a->studytime}</b>, it will be guided by <b>{$a->teacher}</b>. It will begin on <b>{$a->coursestartdate}</b> and end on <b>{$a->courseenddate}</b>.';
 $string['settingsappearanceheader'] = 'Appearance';
 $string['settingsgeneralheader'] = 'General';
 $string['state_active'] = 'Active';
@@ -110,9 +114,5 @@ $string['timehoursrange'] = 'from {$a->from} to {$a->until}';
 $string['viewactivity'] = 'View activity';
 $string['weighing'] = 'Weighing';
 $string['weightedactivities'] = 'Weighted activities';
-$string['forum_rating'] = 'Rating';
-$string['forum_wholeforum'] = 'Whole forum';
-$string['workshopname_submission'] = 'Submission';
 $string['workshopname_assessment'] = 'Assessment';
-$string['alertnotgradable'] = 'You don\'t have a gradable role in the course. To view detailed information, select a user who does.';
-$string['noactivitiesinsection'] = 'There are no activities in this section';
+$string['workshopname_submission'] = 'Submission';

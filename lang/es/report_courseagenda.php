@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['activitytype'] = 'Tipo de actividad';
+$string['alertnotgradable'] = 'No tienes un rol calificable en el curso. Para ver información detallada, selecciona un usuario que sí lo tenga.';
 $string['allactivities'] = 'Todas las actividades';
 $string['automaticgrade'] = 'Calificación automática';
 $string['completionconditions'] = 'Condiciones para completar esta actividad';
@@ -45,6 +46,8 @@ $string['extensiondate'] = 'La actividad se extendió hasta <span>{$a}</span>';
 $string['feedbackdate'] = 'Retroalimentación';
 $string['field_academiccredits'] = 'Créditos académicos';
 $string['field_academiccredits_help'] = 'Un campo personalizado a usar para los créditos académicos del curso.';
+$string['forum_rating'] = 'Calificación';
+$string['forum_wholeforum'] = 'Foro completo';
 $string['fullstate_active'] = 'Activo';
 $string['fullstate_approved'] = 'Actividad aprobada';
 $string['fullstate_blocked'] = 'Bloqueado';
@@ -75,6 +78,7 @@ $string['infodate_expired_between'] = 'Vencido desde <span>{$a->from} hasta {$a-
 $string['infodate_expired_from'] = 'Venció el <span>{$a}</span>';
 $string['infodate_expired_on'] = 'Vencido en <span>{$a}</span>';
 $string['infodate_expired_until'] = 'Vencido desde <span>{$a}</span>';
+$string['noactivitiesinsection'] = 'No hay actividades en esta sección';
 $string['noenddate'] = 'Sin fecha de finalización';
 $string['notdefined'] = 'No definido';
 $string['notuntil'] = 'Sin fecha de finalización';
@@ -87,7 +91,7 @@ $string['progresscolors'] = 'Colores para el progreso';
 $string['progresscolors_help'] = 'Seleccione la lista de colores que desea utilizar en la barra de progreso.
 Utilice el formato: <b>color|porcentaje</b> (uno por línea).<br>
 Ejemplo:<br>#ff0000|33<br>#ffe600|66<br>#00ff00<br>';
-$string['reportsummary'] = 'Hola <span>{$a->userfullname}</span>, este es un curso con una duración de <b>{$a->duration} {$a->studytime}</b>, será guiado por <b>{$a->teacher}</b>. Comenzará el <b>{$a->coursestartdate}</b> y finalizará el <b>{$a->courseenddate}</b>.';
+$string['reportsummary'] = 'Hola <span>{$a->userfullname}</span>, este es un curso con una duración de <b>{$a->duration}{$a->studytime}</b>, será guiado por <b>{$a->teacher}</b>. Comenzará el <b>{$a->coursestartdate}</b> y finalizará el <b>{$a->courseenddate}</b>.';
 $string['settingsappearanceheader'] = 'Apariencia';
 $string['settingsgeneralheader'] = 'Generales';
 $string['state_active'] = 'Activa';
@@ -110,3 +114,5 @@ $string['timehoursrange'] = 'desde {$a->from} hasta {$a->until}';
 $string['viewactivity'] = 'Ver actividad';
 $string['weighing'] = 'ponderado';
 $string['weightedactivities'] = 'Actividades ponderadas';
+$string['workshopname_assessment'] = 'Evaluación';
+$string['workshopname_submission'] = 'Entrega';

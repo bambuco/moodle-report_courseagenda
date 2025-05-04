@@ -91,7 +91,7 @@ class agenda implements renderable, templatable {
             $credits = controller::get_course_credits($course->id);
 
             if ($credits) {
-                $a->studytime = get_string('studytimelabel', 'report_courseagenda', [
+                $a->studytime = ' ' . get_string('studytimelabel', 'report_courseagenda', [
                     'dedication' => $reportconfig->hoursbycredit * $credits,
                     'credits' => $credits,
                 ]);

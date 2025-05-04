@@ -95,13 +95,13 @@
             </div>
         </div>
         {{#coursesections}}
-        <section class="{{#blocked}}mag-section-bloqued{{/blocked}}">
+        <section class="mag-section {{#blocked}}mag-section-bloqued{{/blocked}}">
             <div class="mag-section_unit">
                 <div class="mag-unit_content-text">
-                    <span>
-                        <p class="mag-section_unit-moudle">{{orderlabel}}</p>
+                    <h3 class="mag-section_unit-module">{{orderlabel}}</h3>
+                    <div>
                         <p class="mag-section_unit-title"> {{name}}</p>
-                    </span>
+                    </div>
                     <p class="mag-section_unit-date">{{{availablemessage}}}</p>
 
                     {{#availabledata}}

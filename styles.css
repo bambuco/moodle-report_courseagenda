@@ -248,7 +248,7 @@
     border: solid 1px #e3e3e3;
 }
 
-.path-report-courseagenda .mag-section_unit-moudle {
+.path-report-courseagenda .mag-section_unit-module {
     font-size: 25px;
     color: #4c4c4c;
     margin-bottom: 10px;
@@ -932,13 +932,13 @@
         background-color: #328094;
     }
 
-    .path-report-courseagenda .mag-unit_content-text span {
+    .path-report-courseagenda .mag-unit_content-text > div {
         display: flex;
         justify-content: center;
         align-items: center;
     }
 
-    .path-report-courseagenda .mag-section_unit-moudle,
+    .path-report-courseagenda .mag-section_unit-module,
     .path-report-courseagenda .mag-section_unit-title {
         font-size: 19px;
     }
