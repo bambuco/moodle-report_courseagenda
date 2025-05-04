@@ -21,6 +21,32 @@
 
     Example context (json):
     {
+        "reportsummary": "Report summary",
+        "showprogress": true,
+        "strokedashoffset": 50,
+        "progresscolors": "#4caf50",
+        "progress": 75,
+        "userselector": true,
+        "coursesections": [
+            {
+                "orderlabel": 1,
+                "name": "Section name",
+                "activities": [
+                    {
+                        "state": "completed",
+                        "weighing": 10,
+                        "instancename": "Activity name",
+                        "fullstatename": "Completed",
+                        "stateicon": "<img src='icon.png' alt='icon'>",
+                        "currentgrade": {
+                            "value": 85,
+                            "pass": true
+                        }
+                    }
+                ]
+            }
+        ],
+        "testing": true
     }
 }}
 <div class="mag-container_agenda">
@@ -264,12 +290,13 @@
         {{/coursesections}}
     </div>
 </div>
-<div><!--Used to prevent w3.org validator error with <style> in root body tag.-->
-    <style>
-    .path-report-courseagenda {
-        {{#specialcolors}}
-            --rag-{{state}}: {{value}};
-        {{/specialcolors}}
-    }
-    </style>
-</div>
+{{^testing}}
+{{! Used to prevent w3.org validator error with <style> in root body tag. }}
+<style>
+.path-report-courseagenda {
+    {{#specialcolors}}
+        --rag-{{state}}: {{value}};
+    {{/specialcolors}}
+}
+</style>
+{{/testing}}

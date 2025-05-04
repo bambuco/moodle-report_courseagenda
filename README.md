@@ -2,7 +2,7 @@
 
 This report allows a quick view of the activities details in the course along with their current status.
 
-Package tested in: moodle 4.3+, 4.5+.
+Package tested in: moodle 4.5+.
 
 ## QUICK INSTALL
 Download zip package, extract the courseagenda folder and upload this folder into report/.
