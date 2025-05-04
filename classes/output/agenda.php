@@ -17,10 +17,11 @@
 namespace report_courseagenda\output;
 
 use renderable;
-use renderer_base;
+use core\output\renderer_base;
 use templatable;
 use context_course;
 use report_courseagenda\local\controller;
+use stdClass;
 
 /**
  * Class agenda
@@ -55,16 +56,17 @@ class agenda implements renderable, templatable {
     /**
      * Export this data so it can be used as the context for a mustache template.
      *
-     * @param \renderer_base $output
+     * @param renderer_base $output
      * @return array Context variables for the template
      */
     public function export_for_template(renderer_base $output) {
-        global $CFG, $PAGE;
+        global $CFG, $PAGE, $USER;
 
         $reportconfig = get_config('report_courseagenda');
 
         $course = $this->course;
-        $course->fullname = format_string($course->fullname, true, ['context' => context_course::instance($course->id)]);
+        $context = context_course::instance($course->id);
+        $course->fullname = format_string($course->fullname, true, ['context' => $context]);
         $course->summary = format_text($course->summary, $course->summaryformat);
 
         $a = new \stdClass();
@@ -98,6 +100,13 @@ class agenda implements renderable, templatable {
 
         $reportsummary = get_string('reportsummary', 'report_courseagenda', $a);
 
+        // Is the user gradable in the course?
+        $gradable = controller::is_user_gradable_in_course($course->id, $USER->id);
+        $alertnotgradable = new stdClass();
+        if (!$gradable) {
+            $alertnotgradable->message = get_string('alertnotgradable', 'report_courseagenda');
+        }
+
         $progress = controller::get_student_progress($course, $this->user->id);
         $progresscolor = '';
         $strokedashoffset = 0;
@@ -113,6 +122,40 @@ class agenda implements renderable, templatable {
 
         $coursesections = controller::get_course_sections($course, $this->user);
 
+        $userselectorcontent = null;
+        if (has_capability('moodle/grade:viewall', $context)) {
+            $userid = $this->user->id;
+            $gradableusers = \grade_report::get_gradable_users($course->id);
+            // Validate whether the requested user is a valid gradable user in this course. If, not display the user select
+            // zero state.
+            if (empty($gradableusers) || ($userid && !array_key_exists($userid, $gradableusers))) {
+                $userid = null;
+            }
+
+            $resetlink = new \moodle_url('/report/courseagenda/index.php', ['id' => $course->id]);
+            $baseurl = new \moodle_url('/report/courseagenda/index.php', ['id' => $course->id]);
+            $PAGE->requires->js_call_amd('gradereport_user/user', 'init', [$baseurl->out(false)]);
+
+            $userselector = new \core_course\output\actionbar\user_selector(
+                course: $course,
+                resetlink: $resetlink,
+                userid: $userid,
+                groupid: null,
+                usersearch: '',
+            );
+
+            $userselectorcontent = $userselector->export_for_template($output);
+        }
+
+        $specialcolors = [];
+        $stateoptions = controller::get_state_options();
+        foreach ($stateoptions as $key => $stateoption) {
+            $specialcolors[] = (object)[
+                'state' => $key,
+                'value' => $stateoption['color'],
+            ];
+        }
+
         $defaultvariables = [
             'baseurl' => $CFG->wwwroot,
             'course' => $course,
@@ -123,6 +166,10 @@ class agenda implements renderable, templatable {
             'strokedashoffset' => $strokedashoffset,
             'progresscolors' => $progresscolor,
             'coursesections' => $coursesections,
+            'gradable' => $gradable,
+            'alertnotgradable' => $alertnotgradable,
+            'userselector' => $userselectorcontent,
+            'specialcolors' => $specialcolors,
         ];
 
         $PAGE->requires->js_call_amd('report_courseagenda/main', 'init', []);

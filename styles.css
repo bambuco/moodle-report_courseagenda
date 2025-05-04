@@ -1,3 +1,24 @@
+.path-report-courseagenda {
+    --rag-active: #9c27b0;
+    --rag-approved: #50b447;
+    --rag-pending: #e09523;
+    --rag-completed: #3593ab;
+    --rag-undelivered: #d04961;
+    --rag-delivered: #3593ab;
+    --rag-retarded: #d04961;
+    --rag-failed: #d04961;
+    --rag-blocked: #646464;
+    --rag-active-alt: #fff;
+    --rag-approved-alt: #fff;
+    --rag-pending-alt: #fff;
+    --rag-completed-alt: #fff;
+    --rag-undelivered-alt: #fff;
+    --rag-delivered-alt: #fff;
+    --rag-retarded-alt: #fff;
+    --rag-failed-alt: #fff;
+    --rag-blocked-alt: #fff;
+}
+
 .path-report-courseagenda .mag-container_agenda {
     margin: auto;
     max-width: 1800px;
@@ -70,7 +91,6 @@
 .path-report-courseagenda .mag-header_info-text {
     margin-left: 20px;
     font-size: 16px;
-    line-height: 0.35em;
     color: #7a7a7a;
 }
 
@@ -171,12 +191,12 @@
 
 .path-report-courseagenda .mag-agenda-filters {
     display: flex;
-    justify-content: right;
+    justify-content: space-between;
     align-items: center;
     padding: 10px 0;
 }
 
-.path-report-courseagenda .mag-select-activity {
+.path-report-courseagenda .mag-container_agenda select {
     padding: 10px;
     font-size: 15px;
     background-color: #e7e7e7;
@@ -187,7 +207,7 @@
     color: #6e6e6e;
 }
 
-.path-report-courseagenda .mag-select-activity:focus {
+.path-report-courseagenda .mag-container_agenda select:focus {
     outline: none;
 }
 
@@ -217,6 +237,10 @@
     margin: 0;
     padding: 0;
     line-height: 1.5;
+}
+
+.path-report-courseagenda .mag-unit_content-text .text-truncate {
+    white-space: normal;
 }
 
 .path-report-courseagenda .mag-section-bloqued .mag-section_unit {
@@ -251,8 +275,11 @@
     width: 100%;
 }
 
-.path-report-courseagenda .mag-section_activity > div {
+.path-report-courseagenda .mag-section_activity > div:not(.mag-activity-not-found) {
     cursor: pointer;
+}
+
+.path-report-courseagenda .mag-section_activity > div {
     overflow: hidden;
     position: relative;
     display: flex;
@@ -271,7 +298,7 @@
     transition: all 0.3s ease;
 }
 
-.path-report-courseagenda .mag-container_agenda a {
+.path-report-courseagenda .mag-container_agenda .mag-section_activity a {
     text-decoration: none;
     display: flex;
     justify-content: center;
@@ -292,49 +319,61 @@
 
 .path-report-courseagenda .mag-activity_active {
     position: relative;
-    border-left: solid #9c27b0 5.8px;
+    border-left: solid var(--rag-active) 5.8px;
 }
 
 .path-report-courseagenda .mag-activity_approved {
     position: relative;
-    border-left: solid #50b447 5.8px;
+    border-left: solid var(--rag-approved) 5.8px;
     display: inline-block;
 }
 
 .path-report-courseagenda .mag-activity_pending {
     position: relative;
-    border-left: solid #e09523 5.8px;
+    border-left: solid var(--rag-pending) 5.8px;
 }
 
-.path-report-courseagenda .mag-activity_completed,
+.path-report-courseagenda .mag-activity_completed {
+    position: relative;
+    border-left: solid var(--rag-completed) 5.8px;
+}
+
 .path-report-courseagenda .mag-activity_delivered {
     position: relative;
-    border-left: solid #3593ab 5.8px;
+    border-left: solid var(--rag-delivered) 5.8px;
 }
 
-.path-report-courseagenda .mag-activity_undelivered,
-.path-report-courseagenda .mag-activity_retarded,
+.path-report-courseagenda .mag-activity_undelivered {
+    position: relative;
+    border-left: solid var(--rag-undelivered) 5.8px;
+}
+
+.path-report-courseagenda .mag-activity_retarded {
+    position: relative;
+    border-left: solid var(--rag-retarded) 5.8px;
+}
+
 .path-report-courseagenda .mag-activity_failed {
     position: relative;
-    border-left: solid #d04961 5.8px;
+    border-left: solid var(--rag-failed) 5.8px;
 }
 
 .path-report-courseagenda .mag-activity_blocked {
     position: relative;
-    border-left: solid #646464 5.8px;
+    border-left: solid var(--rag-blocked) 5.8px;
 }
 
 .path-report-courseagenda .mag-activity_content {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    padding-left: 10px;
+    padding: 10px 0 10px 10px;
     transition: padding-left 0.5s ease;
 }
 
 .path-report-courseagenda .mag-detailedweighting,
 .path-report-courseagenda .mag-detailed_grading-method {
     text-align: center;
-    width: 110px;
+    width: 130px;
     padding: 3px 5px;
     border-radius: 0.25rem;
     font-size: 0.94rem;
@@ -344,7 +383,7 @@
 }
 
 .path-report-courseagenda .mag-detailedweighting {
-    background-color: #9c27b0;
+    background-color: var(--rag-active);
     display: flex;
     justify-content: space-evenly;
     align-items: center;
@@ -356,45 +395,58 @@
     margin-left: 10px;
     border: solid #545454 0.5px;
     color: #545454;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .path-report-courseagenda .mag-detailedweighting span {
     font-weight: bolder;
+    padding-left: 5px;
 }
 
 .path-report-courseagenda .mag-activity_active .mag-weighing {
-    background-color: #9c27b0;
+    background-color: var(--rag-active);
 }
 
 .path-report-courseagenda .mag-activity_approved .mag-weighing,
 .path-report-courseagenda .mag-activity_approved .mag-detailedweighting {
-    background-color: #50b447;
+    background-color: var(--rag-approved);
 }
 
 .path-report-courseagenda .mag-activity_pending .mag-weighing,
 .path-report-courseagenda .mag-activity_pending .mag-detailedweighting {
-    background-color: #e09523;
+    background-color: var(--rag-pending);
 }
 
 .path-report-courseagenda .mag-activity_completed .mag-weighing,
-.path-report-courseagenda .mag-activity_completed .mag-detailedweighting,
+.path-report-courseagenda .mag-activity_completed .mag-detailedweighting {
+    background-color: var(--rag-completed);
+}
+
 .path-report-courseagenda .mag-activity_delivered .mag-weighing,
 .path-report-courseagenda .mag-activity_delivered .mag-detailedweighting {
-    background-color: #3593ab;
+    background-color: var(--rag-delivered);
 }
 
 .path-report-courseagenda .mag-activity_undelivered .mag-weighing,
-.path-report-courseagenda .mag-activity_undelivered .mag-detailedweighting,
+.path-report-courseagenda .mag-activity_undelivered .mag-detailedweighting {
+    background-color: var(--rag-undelivered);
+}
+
 .path-report-courseagenda .mag-activity_failed .mag-weighing,
-.path-report-courseagenda .mag-activity_failed .mag-detailedweighting,
+.path-report-courseagenda .mag-activity_failed .mag-detailedweighting {
+    background-color: var(--rag-failed);
+}
+
 .path-report-courseagenda .mag-activity_retarded .mag-weighing,
 .path-report-courseagenda .mag-activity_retarded .mag-detailedweighting {
-    background-color: #d04961;
+    background-color: var(--rag-retarded);
 }
 
 .path-report-courseagenda .mag-activity_blocked .mag-weighing,
 .path-report-courseagenda .mag-activity_blocked .mag-detailedweighting {
-    background-color: #646464;
+    background-color: var(--rag-blocked);
 }
 
 .path-report-courseagenda .mag-activity_content-name {
@@ -409,7 +461,7 @@
 
 .path-report-courseagenda .mag-name_content-icon {
     margin-right: 0.5rem;
-    color: #9c27b0;
+    color: var(--rag-active);
 }
 
 .path-report-courseagenda .mag-name_content-icon > i {
@@ -423,7 +475,7 @@
     font-size: 0.85rem;
     font-weight: 400;
     line-height: 1rem;
-    color: #9c27b0;
+    color: var(--rag-active);
 }
 
 .path-report-courseagenda .mag-activity_name-text {
@@ -436,39 +488,51 @@
 
 .path-report-courseagenda .mag-activity_approved .mag-activity_name-span,
 .path-report-courseagenda .mag-activity_approved .mag-name_content-icon {
-    color: #50b447;
+    color: var(--rag-approved);
 }
 
 .path-report-courseagenda .mag-activity_undelivered .mag-activity_name-span,
-.path-report-courseagenda .mag-activity_undelivered .mag-name_content-icon,
+.path-report-courseagenda .mag-activity_undelivered .mag-name_content-icon {
+    color: var(--rag-undelivered);
+}
+
 .path-report-courseagenda .mag-activity_pending .mag-activity_name-span,
 .path-report-courseagenda .mag-activity_pending .mag-name_content-icon {
-    color: #e09523;
+    color: var(--rag-pending);
 }
 
 .path-report-courseagenda .mag-activity_completed .mag-activity_name-span,
-.path-report-courseagenda .mag-activity_completed .mag-name_content-icon,
+.path-report-courseagenda .mag-activity_completed .mag-name_content-icon {
+    color: var(--rag-completed);
+}
+
 .path-report-courseagenda .mag-activity_delivered .mag-activity_name-span,
 .path-report-courseagenda .mag-activity_delivered .mag-name_content-icon {
-    color: #3593ab;
+    color: var(--rag-delivered);
 }
 
 .path-report-courseagenda .mag-activity_undelivered .mag-name_content-icon,
-.path-report-courseagenda .mag-activity_undelivered .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_undelivered .mag-activity_name-span {
+    color: var(--rag-undelivered);
+}
+
 .path-report-courseagenda .mag-activity_retarded .mag-name_content-icon,
-.path-report-courseagenda .mag-activity_retarded .mag-activity_name-span,
+.path-report-courseagenda .mag-activity_retarded .mag-activity_name-span {
+    color: var(--rag-retarded);
+}
+
 .path-report-courseagenda .mag-activity_failed .mag-activity_name-span,
 .path-report-courseagenda .mag-activity_failed .mag-name_content-icon {
-    color: #d04961;
+    color: var(--rag-failed);
 }
 
 .path-report-courseagenda .mag-activity_blocked .mag-activity_name-span,
 .path-report-courseagenda .mag-activity_blocked .mag-name_content-icon {
-    color: #3f3f3f;
+    color: var(--rag-blocked);
 }
 
 .path-report-courseagenda .mag-detailed_completion-lists span.mag-span-retarded {
-    color: #d04961;
+    color: var(--rag-retarded);
 }
 
 .path-report-courseagenda .mag-activity_content-date {
@@ -544,35 +608,50 @@
     line-height: 1.25rem;
     font-weight: bold;
     font-size: 13px;
-    border: solid 1px #9c27b0;
-    color: #9c27b0;
+    border: solid 1px var(--rag-active);
+    color: var(--rag-active);
 }
 
 .path-report-courseagenda .mag-activity_pending .mag-state {
-    border: solid 1px #ffd89e;
-    color: #e09523;
-    background: #fff6e8;
+    border: solid 1px var(--rag-pending);
+    color: var(--rag-pending);
+    background: var(--rag-pending-alt);
 }
 
-.path-report-courseagenda .mag-activity_completed .mag-state,
+.path-report-courseagenda .mag-activity_completed .mag-state {
+    border: solid 1px var(--rag-completed);
+    color: var(--rag-completed);
+    background: var(--rag-completed-alt);
+}
+
 .path-report-courseagenda .mag-activity_delivered .mag-state {
-    background: #dcf9ff;
-    border: solid 1px #6bbed3;
-    color: #3593ab;
+    border: solid 1px var(--rag-delivered);
+    color: var(--rag-delivered);
+    background: var(--rag-delivered-alt);
 }
 
-.path-report-courseagenda .mag-activity_undelivered .mag-state,
-.path-report-courseagenda .mag-activity_failed .mag-state,
+.path-report-courseagenda .mag-activity_undelivered .mag-state {
+    border: solid 1px var(--rag-undelivered);
+    color: var(--rag-undelivered);
+    background: var(--rag-undelivered-alt);
+}
+
+.path-report-courseagenda .mag-activity_failed .mag-state {
+    border: solid 1px var(--rag-failed);
+    color: var(--rag-failed);
+    background: var(--rag-failed-alt);
+}
+
 .path-report-courseagenda .mag-activity_retarded .mag-state {
-    background: #fff0f3;
-    border: solid 1px #ffc4cd;
-    color: #d04961;
+    border: solid 1px var(--rag-retarded);
+    color: var(--rag-retarded);
+    background: var(--rag-retarded-alt);
 }
 
 .path-report-courseagenda .mag-activity_blocked .mag-state {
-    border: solid 1px #969696;
-    color: #444;
-    background: #e7e7e7;
+    border: solid 1px var(--rag-blocked);
+    color: var(--rag-blocked);
+    background: var(--rag-blocked-alt);
 }
 
 .path-report-courseagenda .mag-teacher_state-qualified {
@@ -637,7 +716,6 @@
 
 .path-report-courseagenda .mag-detailed_info-text i {
     font-size: 18px;
-    margin-right: 10px;
 }
 
 .path-report-courseagenda .mag-detailed_info-text p,
@@ -651,6 +729,7 @@
     color: #818181;
     font-size: 16px;
     margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .path-report-courseagenda .mag-detailed_icon-see-activity {
@@ -684,6 +763,7 @@
     display: flex;
     align-items: center;
     font-weight: normal;
+    margin-left: 5px;
 }
 
 .path-report-courseagenda .mag-detailed_container-list b {
@@ -695,13 +775,15 @@
     font-weight: normal;
 }
 
-.path-report-courseagenda .mag-detailed_container-list .badge.badge-pill {
+.path-report-courseagenda .mag-detailed_container-list .badge.rounded-pill {
     display: flex;
     justify-content: start;
     align-items: baseline;
     margin-bottom: 5px;
     font-size: 90%;
-    background-color: transparent;
+    /* The following rule uses !important intentionally to override !important in site level */
+    /* stylelint-disable-next-line declaration-no-important */
+    background-color: transparent !important;
 }
 
 .path-report-courseagenda .mag-detailed_container-list .badge.badge-pill > * {
@@ -731,6 +813,17 @@
 
 }
 
+.path-report-courseagenda .mag-section_availability .availabilityinfo {
+    margin-top: 10px;
+    color: #328094;
+}
+
+.path-report-courseagenda .mag-section_availability .availabilityinfo ul {
+    text-align: left;
+    color: #000;
+    margin-top: 10px;
+}
+
 /*Text lock*/
 .path-report-courseagenda .mag-detailed_text-lock {
     border-top: 1px solid #ccc;
@@ -752,7 +845,7 @@
 
 @media (min-width: 1024px) {
 
-    .path-report-courseagenda .mag-activity:hover .mag-activity_content {
+    .path-report-courseagenda .mag-activity:not(.active):hover .mag-activity_content {
         align-items: center;
         padding-left: 70px;
     }
@@ -786,7 +879,7 @@
     }
 
     .path-report-courseagenda .mag-border_span-porcent {
-        font-size: 16px;
+        font-size: 22px;
     }
 
     .path-report-courseagenda .mag-activity:hover .mag-activity_border-text span {
@@ -958,6 +1051,14 @@
         display: none;
     }
 
+    .path-report-courseagenda .mag-agenda-filters {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .path-report-courseagenda .mag-agenda-filters > div {
+        margin-bottom: 10px;
+    }
+
 }
 
 @media (max-width: 640px) {
@@ -1022,5 +1123,4 @@
     .path-report-courseagenda .mag-activity_content-name {
         grid-column: span 8 / span 8;
     }
-
 }

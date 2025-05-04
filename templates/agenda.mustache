@@ -31,6 +31,11 @@
                 <p class="mag-info-header">
                     {{{reportsummary}}}
                 </p>
+                {{^gradable}}
+                    {{#alertnotgradable}}
+                        {{> core/notification_warning}}
+                    {{/alertnotgradable}}
+                {{/gradable}}
             </div>
         </div>
         <div class="mag-header_info-date">
@@ -51,11 +56,18 @@
     </div>
     <div class="mag-agenda_content">
         <div class="mag-agenda-filters">
-            <select class="mag-select-activity">
-                <option value="all">{{#str}}allactivities, report_courseagenda{{/str}}</option>
-                <option value="weighted">{{#str}}weightedactivities, report_courseagenda{{/str}}</option>
-                <option value="notweighted">{{#str}}notweightedactivities, report_courseagenda{{/str}}</option>
-            </select>
+            <div class="navitem">
+                {{#userselector}}
+                    {{>core/comboboxsearch}}
+                {{/userselector}}
+            </div>
+            <div class="navitem">
+                <select id="mag-select-byweighted">
+                    <option value="all">{{#str}}allactivities, report_courseagenda{{/str}}</option>
+                    <option value="weighted">{{#str}}weightedactivities, report_courseagenda{{/str}}</option>
+                    <option value="notweighted">{{#str}}notweightedactivities, report_courseagenda{{/str}}</option>
+                </select>
+            </div>
         </div>
         {{#coursesections}}
         <section class="{{#blocked}}mag-section-bloqued{{/blocked}}">
@@ -66,15 +78,18 @@
                         <p class="mag-section_unit-title"> {{name}}</p>
                     </span>
                     <p class="mag-section_unit-date">{{{availablemessage}}}</p>
+
+                    {{#availabledata}}
+                        {{> report_courseagenda/sectionavailability }}
+                    {{/availabledata}}
                 </div>
 
             </div>
             <div class="mag-section_activity">
                 {{#activities}}
-                    <div class="mag-activity mag-activity_{{state}}">
+                    <div class="mag-activity mag-activity_{{state}}" data-weighing="{{weighing}}">
                         <div class="mag-activity_border-text mag-weighing">
                             <span class="mag-border_span-porcent">{{weighing}}</span>
-                            <span class="mag-border_span-text">{{#str}} weighing, report_courseagenda {{/str}}</span>
                         </div>
                         <div class="mag-activity_content">
 
@@ -156,7 +171,7 @@
                                     {{#currentgrade}}
                                         <div class="mag-detailed_Weighting-grading-method">
                                             <div class="mag-agenda_activity_weighting-detailed mag-detailedweighting">
-                                                {{#str}} weighing, report_courseagenda {{/str}}
+                                                {{itemname}}
                                                 <span>{{weighing}}</span>
                                             </div>
                                             <div class="mag-detailed_grading-method">
@@ -223,6 +238,7 @@
                                         </div>
                                     {{/extensions}}
                                 </div>
+                                {{#showlink}}
                                 <div class="mag-detailed_info-btn">
                                     <a href="{{{modurl}}}"
                                         target="_blank">
@@ -234,8 +250,14 @@
                                         </div>
                                     </a>
                                 </div>
+                                {{/showlink}}
                             </div>
                         </div>
+                    </div>
+                {{/activities}}
+                {{^activities}}
+                    <div class="mag-activity-not-found">
+                        <p>{{#str}} noactivitiesinsection, report_courseagenda {{/str}}</p>
                     </div>
                 {{/activities}}
             </div>
@@ -243,3 +265,10 @@
         {{/coursesections}}
     </div>
 </div>
+<style>
+.path-report-courseagenda {
+    {{#specialcolors}}
+        --rag-{{state}}: {{value}};
+    {{/specialcolors}}
+}
+</style>

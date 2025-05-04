@@ -394,7 +394,7 @@ class controller {
      *
      * @return array The state options.
      */
-    private static function get_state_options(): array {
+    public static function get_state_options(): array {
         global $OUTPUT;
 
         static $loaded = false;
@@ -522,6 +522,7 @@ class controller {
         // phpcs:ignore
         // $modinfo = $courseformat->get_modinfo();
         $modinfo = get_fast_modinfo($course, $user->id);
+        $modinfooriginal = get_fast_modinfo($course, -1);
 
         $coursesections = $modinfo->get_section_info_all();
         $hiddensections = property_exists($course, 'hiddensections') && $course->hiddensections != 1;
@@ -531,6 +532,8 @@ class controller {
         if (!$hiddensections) {
             $hiddensections = has_capability('moodle/course:viewhiddensections', $context, $USER);
         }
+
+        $viewhiddenactivities = has_capability('moodle/course:viewhiddenactivities', $context, $USER);
 
         $reportconfig = get_config('report_courseagenda');
         $includesection0 = $reportconfig->includesection0;
@@ -590,10 +593,13 @@ class controller {
             $availabilityclass = $courseformat->get_output_classname('content\\section\\availability');
             $availability = new $availabilityclass($courseformat, $coursesection);
             $availabledata = $availability->export_for_template($OUTPUT);
+            $section->availabledata = $availabledata;
 
-            if ($availabledata->hasavailability) {
-                $section->availablemessage = $OUTPUT->render($availability);
-            } else if (!$coursesection->available) {
+            if (isset($availabledata->info)) {
+                $availabledata->info->isfullinfo = false;
+            }
+
+            if (!$coursesection->available) {
                 // Section is not available and the availability is hidden.
                 continue;
             }
@@ -627,6 +633,7 @@ class controller {
                     }
 
                     $mod = $modinfo->cms[$modnumber];
+                    $originalmod = $modinfooriginal->cms[$modnumber];
                     $moduletype = $modules[$mod->module];
 
                     if (in_array($mod->modname, $excludemodules)) {
@@ -653,19 +660,20 @@ class controller {
                     $cmdata->deliverable = $moduletype->deliverable;
                     $cmdata->delivered = false;
                     $cmdata->delivereddate = 0;
+                    $cmdata->showlink = true;
 
                     // phpcs:ignore
                     // Mdlcode assume: $moduletype->name ['assign', 'book', 'data'].
                     $cmdata->activitytype = get_string('pluginname', $moduletype->name);
 
-                    $infodates = self::activity_enabledate($mod);
+                    $infodates = self::activity_enabledate($mod, $originalmod);
                     $cmdata->infodates = $infodates;
 
                     if (!$infodates->until) {
                         $infodates->until = $course->enddate;
                     }
-                    $infodates->untilformated = empty($infodates->until) ? get_string('notuntil', 'report_courseagenda')
-                                                                         : userdate($infodates->until, $dateshort);
+                    $infodates->untilformated = empty($infodates->originaluntil) ? get_string('notuntil', 'report_courseagenda')
+                                                                         : userdate($infodates->originaluntil, $dateshort);
 
                     // Check activity extension dates.
                     $extensions = self::get_activityextensions($mod, $user, $usergroups);
@@ -724,6 +732,7 @@ class controller {
                         foreach ($cmdata->gradeitem as $gradeitem) {
                             $currentgrade = new \stdClass();
                             $currentgrade->weighing = $gradeitem->info->weightformatted;
+                            $currentgrade->itemname = self::itemname($gradeitem, count($cmdata->gradeitem) > 1);
                             $currentgrade->grademethod = $availablemethods[$gradeitem->info->grademethod] ?? '';
 
                             // To calculate the general activity weighing.
@@ -754,7 +763,7 @@ class controller {
                         }
 
                         $cmdata->weighing = !empty($cmdata->gradeitem) ? $weighing : 0;
-                        $cmdata->weighing = round($cmdata->weighing * 100, 0);
+                        $cmdata->weighing = self::format_number($cmdata->weighing * 100);
                         $cmdata->weighing .= '%';
                     }
 
@@ -819,6 +828,7 @@ class controller {
                     $infodatefrom = $infodates->from;
                     $infodateuntil = $infodates->until;
                     switch ($cmdata->state) {
+                        case self::STATE_PENDING:
                         case self::STATE_RETARDED:
                             $infostate = ($infodates->until - time()) / (60 * 60 * 24);
                             $infostate = round($infostate);
@@ -837,6 +847,9 @@ class controller {
                                 $infodatefrom = $cmdata->delivereddate;
                                 $infodateuntil = 0;
                             }
+                            break;
+                        case self::STATE_BLOCKED:
+                            $cmdata->showlink = $viewhiddenactivities;
                             break;
                     }
 
@@ -869,12 +882,14 @@ class controller {
      * Return the enable date of an activity.
      *
      * @param \cm_info $mod The course module info.
+     * @param \cm_info $originalmod The original course module info. Not user customdata.
      * @return object The enable dates of the activity: from, until.
      */
-    public static function activity_enabledate(\cm_info $mod): object {
+    public static function activity_enabledate(\cm_info $mod, \cm_info $originalmod): object {
         $dates = (object)[
             'from' => 0,
             'until' => 0,
+            'originaluntil' => 0,
             'close' => 0,
         ];
 
@@ -885,6 +900,7 @@ class controller {
         }
 
         $cmdata = $mod->customdata;
+        $cmdataoriginal = $originalmod->customdata;
 
         if (is_string($cmdata)) {
             return $dates;
@@ -896,39 +912,51 @@ class controller {
             $cmdata = (object)$cmdata;
         }
 
+        if (is_array($cmdataoriginal)) {
+            $cmdataoriginal = (object)$cmdataoriginal;
+        }
+
         switch ($mod->modname) {
             case 'assign':
                 $dates->from = $cmdata->allowsubmissionsfromdate ?? '';
                 $dates->until = $cmdata->duedate ?? '';
+                $dates->originaluntil = $cmdataoriginal->duedate ?? '';
                 $dates->close = $cmdata->cutoffdate ?? $course->enddate;
                 break;
             case 'data':
                 $dates->from = $cmdata->timeavailablefrom ?? '';
                 $dates->until = $cmdata->timeavailableto ?? '';
+                $dates->originaluntil = $cmdataoriginal->timeavailableto ?? '';
                 break;
             case 'feedback':
                 $dates->from = $cmdata->timeopen ?? '';
                 $dates->until = $cmdata->timeclose ?? '';
+                $dates->originaluntil = $cmdataoriginal->timeclose ?? '';
                 break;
             case 'forum':
                 $dates->until = $cmdata->duedate ?? '';
+                $dates->originaluntil = $cmdataoriginal->duedate ?? '';
                 $dates->close = $cmdata->cutoffdate ?? $course->enddate;
                 break;
             case 'lesson':
                 $dates->from = $cmdata->available ?? '';
                 $dates->until = $cmdata->deadline ?? '';
+                $dates->originaluntil = $cmdataoriginal->deadline ?? '';
                 break;
             case 'quiz':
                 $dates->from = $cmdata->timeopen ?? '';
                 $dates->until = $cmdata->timeclose ?? '';
+                $dates->originaluntil = $cmdataoriginal->timeclose ?? '';
                 break;
             case 'scorm':
                 $dates->from = $cmdata->timeopen ?? '';
                 $dates->until = $cmdata->timeclose ?? '';
+                $dates->originaluntil = $cmdataoriginal->timeclose ?? '';
                 break;
             case 'workshop':
                 $dates->from = $cmdata->submissionstart ?? '';
                 $dates->until = $cmdata->submissionend ?? '';
+                $dates->originaluntil = $cmdataoriginal->submissionend ?? '';
                 break;
         }
 
@@ -1077,7 +1105,7 @@ class controller {
             // This obliterates the weight because it provides a more informative description.
             if (is_numeric($hint['weight'])) {
                 $customgradeinfo->info->weightraw = $hint['weight'];
-                $customgradeinfo->info->weightformatted = format_float($hint['weight'] * 100.0, 0) . '%';
+                $customgradeinfo->info->weightformatted = self::format_number($hint['weight'] * 100.0) . '%';
             }
             if ($hint['status'] != 'used' && $hint['status'] != 'unknown') {
                 $customgradeinfo->info->status = $hint['status'];
@@ -1400,7 +1428,7 @@ class controller {
         $label = '';
 
         $strftimedate = get_string('strftimedateshort', 'langconfig');
-        $strftimerecent = get_string('strftimerecent', 'langconfig');
+        $strftimerecent = get_string('strftimedatetime', 'langconfig');
         $timeformat = get_string('strftimetime24', 'langconfig');
 
         if (!empty($until) && $until < time()) {
@@ -1582,4 +1610,83 @@ class controller {
         return $delivered;
     }
 
+    /**
+     * Format the number with the configured decimal points.
+     *
+     * @param float $number The number to format.
+     * @return string The formatted number.
+     */
+    public static function format_number($number): string {
+        global $CFG;
+
+        $decimals = 2;
+        if (property_exists($CFG, 'grade_decimalpoints')) {
+            $decimals = $CFG->grade_decimalpoints;
+        }
+
+        if ($number === 0.0 || $number === 0 || $number === '0') {
+            return '0';
+        }
+
+        return format_float($number, $decimals, true);
+    }
+
+    /**
+     * Return the name of the grade item.
+     *
+     * @param object $gradeitem The grade item object.
+     * @return string The name of the grade item.
+     */
+    public static function itemname(object $gradeitem, $multi = false): string {
+
+        $name = get_string('weighing', 'report_courseagenda');
+        if (!$multi) {
+            return $name;
+        }
+
+        switch ($gradeitem->item->itemmodule) {
+            case 'forum':
+                $name = get_string(
+                                    ($gradeitem->item->itemnumber == 0 ? 'forum_rating' : 'forum_wholeforum'),
+                                    'report_courseagenda'
+                                );
+                break;
+            case 'workshop':
+                $name = get_string(
+                                    ($gradeitem->item->itemnumber == 0 ? 'workshopname_submission' : 'workshopname_assessment'),
+                                    'report_courseagenda'
+                                );
+                break;
+        }
+
+        return $name;
+    }
+
+    /**
+     * Check if a user can be graded in a course.
+     * Based in LTI Gradebook Services.
+     *
+     * @param int $courseid The course
+     * @param int $userid The user
+     * @return bool
+     */
+    public static function is_user_gradable_in_course($courseid, $userid) {
+        global $CFG;
+
+        $gradableuser = false;
+        $coursecontext = \context_course::instance($courseid);
+        if (is_enrolled($coursecontext, $userid, '', false)) {
+            $roles = get_user_roles($coursecontext, $userid);
+            $gradebookroles = explode(',', $CFG->gradebookroles);
+            foreach ($roles as $role) {
+                foreach ($gradebookroles as $gradebookrole) {
+                    if ($role->roleid === $gradebookrole) {
+                        $gradableuser = true;
+                    }
+                }
+            }
+        }
+
+        return $gradableuser;
+    }
 }

@@ -28,7 +28,7 @@ require('../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
 $id = required_param('id', PARAM_INT);
-$userid = optional_param('user', 0, PARAM_INT);
+$userid = optional_param('userid', 0, PARAM_INT);
 
 $course = $DB->get_record('course', ['id' => $id], '*', MUST_EXIST);
 $context = context_course::instance($course->id);

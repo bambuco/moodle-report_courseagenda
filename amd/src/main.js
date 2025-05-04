@@ -38,6 +38,10 @@ export const init = () => {
     $('.mag-activity').on('click', function(e) {
         clickActivity(e, $(this));
     });
+
+    $('#mag-select-byweighted').on('change', function(e) {
+        selectByWeighted(e, $(this));
+    });
 };
 
 /**
@@ -77,14 +81,12 @@ function clickActivity(e, $activity) {
 
     const $info = $activity.find('.mag-agenda_activity-info');
     const $hoverInfo = $activity.find('.mag-activity_border-text');
-    const $hoverContent = $activity.find('.mag-activity_content');
     const $icons = $activity.find('.mag-container_icons-show-more');
 
     if ($activity.hasClass('active')) {
         $activity.removeClass('active');
         $info.css('height', '0');
         $hoverInfo.show();
-        $hoverContent.css('padding', '');
         $icons.find('[data-angleop="more"]').show();
         $icons.find('[data-angleop="collapse"]').hide();
     } else {
@@ -92,7 +94,6 @@ function clickActivity(e, $activity) {
         $activity.addClass('active');
         $info.show();
         $info.css('height', $info[0].scrollHeight + 'px');
-        $hoverContent.css('padding', '0');
         $hoverInfo.hide();
         $icons.find('[data-angleop="more"]').hide();
         $icons.find('[data-angleop="collapse"]').show();
@@ -126,4 +127,22 @@ function closeAllModules() {
         moduleUnit.classList.remove('active');
         conditionsInfo.style.maxHeight = '0';
     });
+}
+
+/**
+ * Filter activities by weighted or not.
+ *
+ * @param {Object} e
+ * @param {Object} $select
+ */
+function selectByWeighted(e, $select) {
+    const selectedValue = $select.val();
+
+    $('.mag-activity').show();
+
+    if (selectedValue === 'weighted') {
+        $('.mag-activity[data-weighing="0%"]').hide();
+    } else if (selectedValue === 'notweighted') {
+        $('.mag-activity:not([data-weighing="0%"]').hide();
+    }
 }
