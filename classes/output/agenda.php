@@ -170,6 +170,9 @@ class agenda implements renderable, templatable {
             'alertnotgradable' => $alertnotgradable,
             'userselector' => $userselectorcontent,
             'specialcolors' => $specialcolors,
+            'helpprogress' => (object)[
+                'text' => get_string('titleprogresstooltip', 'report_courseagenda'),
+            ],
         ];
 
         $PAGE->requires->js_call_amd('report_courseagenda/main', 'init', []);

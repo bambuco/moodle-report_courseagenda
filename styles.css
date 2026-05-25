@@ -57,6 +57,19 @@
     background-color: #fff;
 }
 
+.path-report-courseagenda .mag-header_info-date .mag-header_info-date-text {
+    max-width: 150px;
+    text-align: center;
+
+    h5,
+    i {
+        color: var(--primary);
+        font-size: 16px;
+        line-height: 18px;
+        margin-bottom: 0;
+    }
+}
+
 .path-report-courseagenda .mag-info-header {
     margin-bottom: 15px;
 }

@@ -66,6 +66,12 @@
         <div class="mag-header_info-date">
 
             {{#showprogress}}
+            <div class="mag-header_info-date-text">
+                <h5>{{#str}}titleprogress, report_courseagenda{{/str}}</h5>
+                {{#helpprogress}}
+                    {{> core/help_icon}}
+                {{/helpprogress}}
+            </div>
             <div class="mag-header_info-progress">
                 <svg class="mag-progress-circle" width="80" height="80">
                     <circle cx="40" cy="40" r="35" stroke="#E6E6E6" stroke-width="8" fill="none"></circle>

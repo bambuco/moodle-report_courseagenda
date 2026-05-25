@@ -111,6 +111,8 @@ Para ver la lista de posibles iconos, consulte: <a href="https://componentlibrar
 Ejemplo:<br>failed|#FF0000<br>pending|#ffe600|tool_policy:pending<br>approved|#00FF00|core:t/approve<br>';
 $string['studytimelabel'] = '- {$a->dedication} horas de dedicación ({$a->credits} créditos académicos)';
 $string['timehoursrange'] = 'desde {$a->from} hasta {$a->until}';
+$string['titleprogress'] = 'Progreso del curso';
+$string['titleprogresstooltip'] = 'Este porcentaje se calcula con base en las actividades del curso que requieren ser completadas y las que efectivamente has completado.';
 $string['viewactivity'] = 'Ver actividad';
 $string['weighing'] = 'ponderado';
 $string['weightedactivities'] = 'Actividades ponderadas';

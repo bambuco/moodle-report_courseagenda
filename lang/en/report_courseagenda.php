@@ -111,6 +111,8 @@ For the icons list see: <a href="https://componentlibrary.moodle.com/admin/tool/
 Example:<br>failed|#FF0000<br>pending|#ffe600|tool_policy:pending<br>approved|#00FF00|core:t/approve<br>';
 $string['studytimelabel'] = '- {$a->dedication} hours of dedication ({$a->credits} academic credits)';
 $string['timehoursrange'] = 'from {$a->from} to {$a->until}';
+$string['titleprogress'] = 'Course progress';
+$string['titleprogresstooltip'] = 'This percentage is calculated based on the course activities that need to be completed and those you have actually completed.';
 $string['viewactivity'] = 'View activity';
 $string['weighing'] = 'Weighing';
 $string['weightedactivities'] = 'Weighted activities';
