@@ -80,6 +80,7 @@ $string['infodate_expired_on'] = 'Vencido en <span>{$a}</span>';
 $string['infodate_expired_until'] = 'Vencido desde <span>{$a}</span>';
 $string['noactivitiesinsection'] = 'No hay actividades en esta sección';
 $string['noenddate'] = 'Sin fecha de finalización';
+$string['notapplicable'] = 'No aplica';
 $string['notdefined'] = 'No definido';
 $string['notuntil'] = 'Sin fecha de finalización';
 $string['notweightedactivities'] = 'Actividades sin ponderación';

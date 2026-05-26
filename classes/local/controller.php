@@ -777,9 +777,14 @@ class controller {
 
                     if (!$modgraded || $requiregrade) {
                         if ($requiregrade && self::require_feedbackgrade($mod, $user)) {
-                            $infodates->feedbackdate = $infodates->until + $daystograde;
-                            $infodates->feedbackdateformated = userdate($infodates->feedbackdate, $dateoneday);
-                            $infodates->feedbackdateexpired = $infodates->feedbackdate < time();
+                            if ($infodates->until > 0) {
+                                $infodates->feedbackdate = $infodates->until + $daystograde;
+                                $infodates->feedbackdateformated = userdate($infodates->feedbackdate, $dateoneday);
+                                $infodates->feedbackdateexpired = $infodates->feedbackdate < time();
+                            } else {
+                                $infodates->feedbackdate = 0;
+                                $infodates->feedbackdateformated = get_string('notapplicable', 'report_courseagenda');
+                            }
                             $requiregrade = true;
                         } else {
                             $infodates->feedbackdate = 0;
@@ -830,10 +835,12 @@ class controller {
                     switch ($cmdata->state) {
                         case self::STATE_PENDING:
                         case self::STATE_RETARDED:
-                            $infostate = ($infodates->until - time()) / (60 * 60 * 24);
+                            $infostate = $infodates->until > 0 ? ($infodates->until - time()) / (60 * 60 * 24) : 0;
                             $infostate = round($infostate);
 
-                            if ($infostate < 0 && $infodates->close) {
+                            if ($infodates->until == 0) {
+                                $cmdata->fullstatename = get_string('notuntil', 'report_courseagenda');
+                            } else if ($infostate < 0 && $infodates->close) {
                                 $closedatef = userdate($infodates->close, $dateoneday);
                                 $cmdata->fullstatename = get_string('fullstate_retardedactive', 'report_courseagenda', $closedatef);
                             } else if ($infostate <= $reportconfig->daystosendactivity) {
@@ -1510,7 +1517,7 @@ class controller {
                 $sql = "SELECT MAX(asb.timemodified) AS timecompleted
                         FROM {assign} a
                         INNER JOIN {assign_submission} asb ON a.id = :assignmentid AND a.id = asb.assignment
-                        WHERE asb.userid = :userid AND (a.submissiondrafts = 0 OR asb.status = 'submitted')";
+                        WHERE asb.userid = :userid AND asb.status = 'submitted'";
                 $delivered = $DB->get_field_sql($sql, $params);
                 break;
             case 'data':
