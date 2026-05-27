@@ -835,6 +835,7 @@ class controller {
                     switch ($cmdata->state) {
                         case self::STATE_PENDING:
                         case self::STATE_RETARDED:
+                        case self::STATE_UNDELIVERED:
                             $infostate = $infodates->until > 0 ? ($infodates->until - time()) / (60 * 60 * 24) : 0;
                             $infostate = round($infostate);
 
@@ -844,7 +845,12 @@ class controller {
                                 $closedatef = userdate($infodates->close, $dateoneday);
                                 $cmdata->fullstatename = get_string('fullstate_retardedactive', 'report_courseagenda', $closedatef);
                             } else if ($infostate <= $reportconfig->daystosendactivity) {
-                                $cmdata->fullstatename = get_string('fullstate_pendingdays', 'report_courseagenda', $infostate);
+                                if ($infostate < 0) {
+                                    $days = abs($infostate);
+                                    $cmdata->fullstatename = get_string('fullstate_retarded', 'report_courseagenda', $days);
+                                } else {
+                                    $cmdata->fullstatename = get_string('fullstate_pendingdays', 'report_courseagenda', $infostate);
+                                }
                             }
                             break;
                         case self::STATE_DELIVERED:
