@@ -44,7 +44,7 @@ if ($userid) {
 }
 
 $url = new moodle_url('/report/courseagenda/index.php', ['id' => $id]);
-$title = format_string($course->shortname, true, ['context' => $context]) .': '. get_string('pluginname', 'report_courseagenda');
+$title = format_string($course->shortname, true, ['context' => $context]) . ': ' . get_string('pluginname', 'report_courseagenda');
 $PAGE->set_url($url);
 $PAGE->set_pagelayout('report');
 $PAGE->set_heading(format_string($course->fullname, true, ['context' => $context]));

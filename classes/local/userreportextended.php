@@ -24,7 +24,6 @@ namespace report_courseagenda\local;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class userreportextended extends \gradereport_user\report\user {
-
     /**
      * Optionally blank out course/category totals if they contain any hidden items
      *

@@ -26,7 +26,6 @@ use core_grades\component_gradeitems;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class controller {
-
     /**
      * @var int Course duration in days.
      */
@@ -207,7 +206,6 @@ class controller {
 
                 $key = $cm->modulename . '_' . $cm->instance;
                 self::$coursemodules[$courseid][$key] = $cm;
-
             }
         }
 
@@ -225,7 +223,6 @@ class controller {
 
         $managersnames = [];
         if ($managerroles = get_config('', 'coursecontact')) {
-
             $context = \context_course::instance($courseid);
             $coursecontactroles = explode(',', $managerroles);
             $allmanagers = [];
@@ -304,7 +301,7 @@ class controller {
         $excludemodules = trim($excludemodules);
         if (!empty($excludemodules)) {
             $excludemodules = explode(',', $excludemodules);
-            list($excludein, $params) = $DB->get_in_or_equal($excludemodules, SQL_PARAMS_NAMED, 'param', false);
+            [$excludein, $params] = $DB->get_in_or_equal($excludemodules, SQL_PARAMS_NAMED, 'param', false);
         }
 
         $params['courseid'] = $course->id;
@@ -555,7 +552,7 @@ class controller {
         $excludein = null;
 
         if (!empty($excludemodules)) {
-            list($excludein, $params) = $DB->get_in_or_equal($excludemodules, SQL_PARAMS_NAMED, 'param', false);
+            [$excludein, $params] = $DB->get_in_or_equal($excludemodules, SQL_PARAMS_NAMED, 'param', false);
         }
 
         $params['courseid'] = $course->id;
@@ -579,7 +576,6 @@ class controller {
         $daystograde = (get_config('report_courseagenda', 'daystograde') * 24 * 60 * 60);
         $sections = [];
         foreach ($coursesections as $coursesection) {
-
             if (!$includesection0 && $coursesection->section == 0) {
                 continue;
             }
@@ -622,7 +618,6 @@ class controller {
             // Load activities from the modules.
             $section->activities = [];
             if (!empty($coursesection->sequence)) {
-
                 $sectionmods = explode(",", $coursesection->sequence);
 
                 foreach ($sectionmods as $modnumber) {
@@ -712,8 +707,10 @@ class controller {
 
                     if ($hascompletion && $completioninfo->is_enabled($mod) !== COMPLETION_TRACKING_NONE) {
                         $cmdata->hascompletion = true;
-                        $cmdata->completed = $DB->get_record('course_modules_completion',
-                                                    ['coursemoduleid' => $mod->id, 'userid' => $user->id, 'completionstate' => 1]);
+                        $cmdata->completed = $DB->get_record(
+                            'course_modules_completion',
+                            ['coursemoduleid' => $mod->id, 'userid' => $user->id, 'completionstate' => 1]
+                        );
 
                         $cmdata->showcompletionconditions = $course->showcompletionconditions == COMPLETION_SHOW_CONDITIONS;
                     }
@@ -795,7 +792,6 @@ class controller {
                         if ($cmdata->delivered) {
                             $cmdata->state = $requiregrade ? self::STATE_DELIVERED : self::STATE_COMPLETED;
                         }
-
                     } else {
                         $infodates->feedbackdate = 0;
                         $infodates->feedbackdateformated = get_string('graded', 'report_courseagenda');
@@ -810,11 +806,12 @@ class controller {
                     }
                     // End of Grade information.
 
-                    if ($moduletype->deliverable
-                            && ($cmdata->state == self::STATE_PENDING || $cmdata->state == self::STATE_ACTIVE)
-                            && $infodates->until > 0
-                            && $infodates->until < time()) {
-
+                    if (
+                        $moduletype->deliverable
+                        && ($cmdata->state == self::STATE_PENDING || $cmdata->state == self::STATE_ACTIVE)
+                        && $infodates->until > 0
+                        && $infodates->until < time()
+                    ) {
                         $cmdata->state = self::STATE_UNDELIVERED;
 
                         if ($infodates->close) {
@@ -1019,7 +1016,6 @@ class controller {
         $coursemodules = self::get_coursemodules($course->id);
 
         foreach ($gradeitems as $gradeitem) {
-
             if (in_array($gradeitem->itemmodule, $excludemodules)) {
                 continue;
             }
@@ -1067,11 +1063,16 @@ class controller {
             }
 
             // If this is a hidden grade item, hide it completely from the user.
-            if ($gradegrade->is_hidden() && !$canviewhidden && (
-                $showhiddenitems == GRADE_REPORT_USER_HIDE_HIDDEN ||
-                ($showhiddenitems == GRADE_REPORT_USER_HIDE_UNTIL && !$gradegrade->is_hiddenuntil()))) {
-                    $customgradeinfo->info->visible = false;
-                    continue;
+            if (
+                $gradegrade->is_hidden() &&
+                !$canviewhidden &&
+                (
+                    $showhiddenitems == GRADE_REPORT_USER_HIDE_HIDDEN ||
+                    ($showhiddenitems == GRADE_REPORT_USER_HIDE_UNTIL && !$gradegrade->is_hiddenuntil())
+                )
+            ) {
+                $customgradeinfo->info->visible = false;
+                continue;
             }
 
             // Actual Grade - We need to calculate this whether.
@@ -1079,9 +1080,11 @@ class controller {
             $hint = $gradegrade->get_aggregation_hint();
             if (!$canviewhidden) {
                 // Virtual Grade (may be calculated excluding hidden items etc).
-                $adjustedgrade = $report->get_blank_hidden_total_and_adjust_bounds($course->id,
+                $adjustedgrade = $report->get_blank_hidden_total_and_adjust_bounds(
+                    $course->id,
                     $gradegrade->grade_item,
-                    $gradeval);
+                    $gradeval
+                );
 
                 $gradeval = $adjustedgrade['grade'];
 
@@ -1164,9 +1167,11 @@ class controller {
 
                 if ($canviewhidden) {
                     $customgradeinfo->info->graderaw = $gradeval;
-                    $customgradeinfo->info->gradecontent = grade_format_gradevalue($gradeval,
+                    $customgradeinfo->info->gradecontent = grade_format_gradevalue(
+                        $gradeval,
                         $gradegrade->grade_item,
-                        true) . $gradestatus;
+                        true
+                    ) . $gradestatus;
                 }
             } else {
                 $gradestatusclass = '';
@@ -1192,12 +1197,12 @@ class controller {
                 }
 
                 $customgradeinfo->info->gradeclass = $gradestatusclass;
-                $customgradeinfo->info->gradecontent = $gradepassicon . grade_format_gradevalue($gradeval,
-                        $gradegrade->grade_item, true) . $gradestatus;
+                $gradeformatgradevalue = grade_format_gradevalue($gradeval, $gradegrade->grade_item, true);
+                $customgradeinfo->info->gradecontent = $gradepassicon . $gradeformatgradevalue . $gradestatus;
                 $customgradeinfo->info->graderaw = $gradeval;
             }
-            $customgradeinfo->info->gradeformatted = $customgradeinfo->info->gradecontent;
 
+            $customgradeinfo->info->gradeformatted = $customgradeinfo->info->gradecontent;
         }
 
         self::$activitiesgrades[$course->id] = $gradesinfo;
@@ -1329,7 +1334,6 @@ class controller {
         $availability = new $availabilityclass($courseformat, $section, $mod);
 
         return $OUTPUT->render($availability);
-
     }
 
     /**
@@ -1447,7 +1451,6 @@ class controller {
         if (!empty($until) && $until < time()) {
             $langkey = 'infodate_expired';
         } else {
-
             switch ($state) {
                 case 'active':
                 case 'pending':
@@ -1661,15 +1664,15 @@ class controller {
         switch ($gradeitem->item->itemmodule) {
             case 'forum':
                 $name = get_string(
-                                    ($gradeitem->item->itemnumber == 0 ? 'forum_rating' : 'forum_wholeforum'),
-                                    'report_courseagenda'
-                                );
+                    ($gradeitem->item->itemnumber == 0 ? 'forum_rating' : 'forum_wholeforum'),
+                    'report_courseagenda'
+                );
                 break;
             case 'workshop':
                 $name = get_string(
-                                    ($gradeitem->item->itemnumber == 0 ? 'workshopname_submission' : 'workshopname_assessment'),
-                                    'report_courseagenda'
-                                );
+                    ($gradeitem->item->itemnumber == 0 ? 'workshopname_submission' : 'workshopname_assessment'),
+                    'report_courseagenda'
+                );
                 break;
         }
 

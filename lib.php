@@ -32,8 +32,14 @@
 function report_courseagenda_extend_navigation_course($navigation, $course, $context) {
     if (has_capability('report/courseagenda:view', $context) || has_capability('report/courseagenda:viewall', $context)) {
         $url = new moodle_url('/report/courseagenda/index.php', ['id' => $course->id]);
-        $navigation->add(get_string('pluginname', 'report_courseagenda'), $url,
-                        navigation_node::TYPE_SETTING, null, null, new pix_icon('i/report', ''));
+        $navigation->add(
+            get_string('pluginname', 'report_courseagenda'),
+            $url,
+            navigation_node::TYPE_SETTING,
+            null,
+            null,
+            new pix_icon('i/report', '')
+        );
     }
 }
 
@@ -49,8 +55,10 @@ function report_courseagenda_can_access_user_report($user, $course) {
 
     $coursecontext = context_course::instance($course->id);
 
-    if (has_capability('report/courseagenda:viewall', $coursecontext) ||
-            ($user->id == $USER->id && has_capability('report/courseagenda:view', $coursecontext))) {
+    if (
+        has_capability('report/courseagenda:viewall', $coursecontext) ||
+        ($user->id == $USER->id && has_capability('report/courseagenda:view', $coursecontext))
+    ) {
         return true;
     }
 
@@ -71,7 +79,6 @@ function report_courseagenda_extend_navigation_user($navigation, $user, $course)
     }
 
     if (report_courseagenda_can_access_user_report($user, $course)) {
-
         $params = [];
         $params['id'] = $course->id;
         $params['user'] = $user->id;
@@ -97,7 +104,6 @@ function report_courseagenda_myprofile_navigation(core_user\output\myprofile\tre
     }
 
     if (report_courseagenda_can_access_user_report($user, $course)) {
-
         $params = [];
         $params['id'] = $course->id;
 
@@ -106,8 +112,13 @@ function report_courseagenda_myprofile_navigation(core_user\output\myprofile\tre
         }
 
         $url = new moodle_url('/report/courseagenda/index.php', $params);
-        $node = new core_user\output\myprofile\node('reports', 'courseagenda',
-                        get_string('pluginname', 'report_courseagenda'), null, $url);
+        $node = new core_user\output\myprofile\node(
+            'reports',
+            'courseagenda',
+            get_string('pluginname', 'report_courseagenda'),
+            null,
+            $url
+        );
         $tree->add_node($node);
     }
 }
@@ -123,8 +134,8 @@ function report_courseagenda_page_type_list($pagetype, $parentcontext, $currentc
     $array = [
         '*' => get_string('page-x', 'pagetype'),
         'report-*' => get_string('page-report-x', 'pagetype'),
-        'report-courseagenda-*' => get_string('page-report-courseagenda-x',  'report_courseagenda'),
-        'report-courseagenda-index' => get_string('page-report-courseagenda-index',  'report_courseagenda'),
+        'report-courseagenda-*' => get_string('page-report-courseagenda-x', 'report_courseagenda'),
+        'report-courseagenda-index' => get_string('page-report-courseagenda-index', 'report_courseagenda'),
     ];
     return $array;
 }

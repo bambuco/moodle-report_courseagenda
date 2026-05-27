@@ -31,7 +31,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class agenda implements renderable, templatable {
-
     /**
      * @var \stdClass $course The course object
      */
@@ -178,6 +177,5 @@ class agenda implements renderable, templatable {
         $PAGE->requires->js_call_amd('report_courseagenda/main', 'init', []);
 
         return $defaultvariables;
-
     }
 }
