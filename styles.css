@@ -58,7 +58,6 @@
 }
 
 .path-report-courseagenda .mag-header_info-date .mag-header_info-date-text {
-    max-width: 150px;
     text-align: center;
 
     h5,
@@ -67,6 +66,7 @@
         font-size: 16px;
         line-height: 18px;
         margin-bottom: 0;
+        display: inline;
     }
 }
 

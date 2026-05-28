@@ -1129,6 +1129,11 @@ class controller {
                 }
             }
 
+            // Fallback: calculate weight from grade_item config when no grade exists yet.
+            if (!is_numeric($hint['weight'])) {
+                $hint['weight'] = self::get_item_configured_weight($gradeitem);
+            }
+
             // This obliterates the weight because it provides a more informative description.
             if (is_numeric($hint['weight'])) {
                 $customgradeinfo->info->weightraw = $hint['weight'];
@@ -1635,6 +1640,99 @@ class controller {
         }
 
         return $delivered;
+    }
+
+    /**
+     * Calculate the configured weight for a grade item from its parent category settings.
+     *
+     * This is used as a fallback when the user has no grades yet and the aggregation
+     * weight has not been stored in grade_grades.
+     *
+     * @param \grade_item $gradeitem The grade item.
+     * @return float|null The weight as a decimal (0-1), or null if it cannot be determined.
+     */
+    public static function get_item_configured_weight(\grade_item $gradeitem): ?float {
+        $parent = $gradeitem->get_parent_category();
+        if (!$parent) {
+            return null;
+        }
+
+        $parent->load_grade_item();
+
+        // Get all children grade items in the category (excluding the category item itself).
+        $children = $parent->get_children();
+        $siblings = [];
+        foreach ($children as $child) {
+            $childitem = $child['object'] instanceof \grade_item ? $child['object'] : $child['object']->get_grade_item();
+            if ($childitem->id) {
+                $siblings[$childitem->id] = $childitem;
+            }
+        }
+
+        if (empty($siblings)) {
+            return null;
+        }
+
+        switch ($parent->aggregation) {
+            case GRADE_AGGREGATE_SUM:
+                // Natural: weight is aggregationcoef2, normalized by the sum of all sibling weights.
+                $sumweights = 0;
+                foreach ($siblings as $sibling) {
+                    if ($sibling->aggregationcoef <= 0 && $sibling->aggregationcoef2 > 0) {
+                        $sumweights += $sibling->aggregationcoef2;
+                    }
+                }
+                if ($sumweights > 0) {
+                    return $gradeitem->aggregationcoef2 / $sumweights;
+                }
+                return 0;
+
+            case GRADE_AGGREGATE_WEIGHTED_MEAN:
+                // Weighted mean: weight is aggregationcoef, normalized.
+                $totalcoef = 0;
+                foreach ($siblings as $sibling) {
+                    $totalcoef += $sibling->aggregationcoef;
+                }
+                if ($totalcoef > 0) {
+                    return $gradeitem->aggregationcoef / $totalcoef;
+                }
+                return 0;
+
+            case GRADE_AGGREGATE_WEIGHTED_MEAN2:
+                // Simple weighted mean: weight is based on grade range.
+                if ($gradeitem->aggregationcoef > 0) {
+                    // Extra credit item.
+                    return null;
+                }
+                $totalrange = 0;
+                foreach ($siblings as $sibling) {
+                    if ($sibling->aggregationcoef <= 0) {
+                        $totalrange += ($sibling->grademax - $sibling->grademin);
+                    }
+                }
+                $range = $gradeitem->grademax - $gradeitem->grademin;
+                if ($totalrange > 0) {
+                    return $range / $totalrange;
+                }
+                return 0;
+
+            case GRADE_AGGREGATE_MEAN:
+            case GRADE_AGGREGATE_EXTRACREDIT_MEAN:
+                // Simple mean: equal weight for all items.
+                $count = 0;
+                foreach ($siblings as $sibling) {
+                    if ($parent->aggregation == GRADE_AGGREGATE_MEAN || $sibling->aggregationcoef == 0) {
+                        $count++;
+                    }
+                }
+                if ($count > 0) {
+                    return 1.0 / $count;
+                }
+                return 0;
+
+            default:
+                return null;
+        }
     }
 
     /**
