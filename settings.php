@@ -94,6 +94,13 @@ if ($ADMIN->fulltree) {
     $setting = new admin_setting_configmultiselect($name, $title, $help, [], $modules);
     $settings->add($setting);
 
+    // Include activities in hidden sections.
+    $name = 'report_courseagenda/includehiddensectionsmods';
+    $title = get_string('includehiddensectionsmods', 'report_courseagenda');
+    $help = get_string('includehiddensectionsmods_help', 'report_courseagenda');
+    $setting = new admin_setting_configcheckbox($name, $title, $help, 0);
+    $settings->add($setting);
+
     // Default grade to pass.
     $name = 'report_courseagenda/gradetopass';
     $title = get_string('gradetopass', 'report_courseagenda');

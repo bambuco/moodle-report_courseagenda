@@ -64,6 +64,8 @@ $string['gradetopass'] = 'Grade to pass';
 $string['gradetopass_help'] = 'The minimum grade that a student must obtain to pass the course. Used when the module don\'t have configured.';
 $string['hoursbycredit'] = 'Hours by credit';
 $string['hoursbycredit_help'] = 'The number of hours that a student must dedicate to obtain an academic credit.';
+$string['includehiddensectionsmods'] = 'Include activities in hidden sections';
+$string['includehiddensectionsmods_help'] = 'When enabled, activities in hidden sections will be included in the report. These activities will be shown as blocked.';
 $string['includesection0'] = 'Include section 0';
 $string['includesection0_help'] = 'Include the section 0 in the course agenda report.';
 $string['infodate_available_between'] = 'Available from <span>{$a->from} to {$a->until}</span>';
@@ -119,3 +121,4 @@ $string['weighing'] = 'Weighing';
 $string['weightedactivities'] = 'Weighted activities';
 $string['workshopname_assessment'] = 'Assessment';
 $string['workshopname_submission'] = 'Submission';
+

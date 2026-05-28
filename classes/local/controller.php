@@ -574,6 +574,7 @@ class controller {
         $dateshort = get_string('strftimedatetimeshort', 'langconfig');
         $dateoneday = get_string('strftimedate', 'langconfig');
         $daystograde = (get_config('report_courseagenda', 'daystograde') * 24 * 60 * 60);
+        $includehiddensectionsmods = !empty(get_config('report_courseagenda', 'includehiddensectionsmods'));
         $sections = [];
         foreach ($coursesections as $coursesection) {
             if (!$includesection0 && $coursesection->section == 0) {
@@ -595,8 +596,9 @@ class controller {
                 $availabledata->info->isfullinfo = false;
             }
 
-            if (!$coursesection->available) {
-                // Section is not available and the availability is hidden.
+            // If section is unavailable and there is no availability info, it is hidden by restriction.
+            // When availability info exists, restriction is configured to show the section as unavailable.
+            if (!$hiddensections && !$coursesection->available && empty($availabledata->hasavailability)) {
                 continue;
             }
 
@@ -633,6 +635,15 @@ class controller {
 
                     if (in_array($mod->modname, $excludemodules)) {
                         continue;
+                    }
+
+                    // Check if module is visible. If not, continue with the next one.
+                    if (!$mod->uservisible && !$viewhiddenactivities) {
+                        // When the activity is not visible for students, check if the section is available.
+                        // If the section is not available, the activity will be shown as unavailable instead of hidden.
+                        if ($coursesection->available || !$includehiddensectionsmods) {
+                            continue;
+                        }
                     }
 
                     // The activity don't have completion tracking.
