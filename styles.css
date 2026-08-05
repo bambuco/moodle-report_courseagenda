@@ -318,6 +318,10 @@
     align-items: center;
 }
 
+.path-report-courseagenda .mag-container_agenda .mag-section_activity .mag-detailed_container-list a {
+    display: inline;
+}
+
 .path-report-courseagenda .mag-agenda_activity-info {
     overflow: hidden;
     height: 0;

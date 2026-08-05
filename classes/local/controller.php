@@ -589,7 +589,7 @@ class controller {
             }
 
             foreach ($excludesections as $excludesection) {
-                if (self::section_name_matches_exclusion($coursesection->name, $excludesection)) {
+                if ($coursesection->name && self::section_name_matches_exclusion($coursesection->name, $excludesection)) {
                     continue 2;
                 }
             }
@@ -695,13 +695,7 @@ class controller {
                                                                          : userdate($infodates->originaluntil, $dateshort);
 
                     // Check activity extension dates.
-                    $extensions = self::get_activityextensions($mod, $user, $usergroups);
-
-                    $cmdata->extensions = [];
-                    foreach ($extensions as $extension) {
-                        $extension = userdate($extension, $dateshort);
-                        $cmdata->extensions[] = get_string('extensiondate', 'report_courseagenda', $extension);
-                    }
+                    $cmdata->extensions = self::get_activityextensions($mod, $user, $usergroups);
 
                     if ($mod->available == 0 || $infodates->from > time()) {
                         $cmdata->state = self::STATE_BLOCKED;
@@ -1417,98 +1411,101 @@ class controller {
             $idgroupslist = implode(',', $groupids);
         }
 
-        // Check if the user is not the current user. Get the extensions for all users in the current instance.
-        $allusers = $user->id != $USER->id;
+        // Check if the user is a teacher displaying the report for general information.
+        $allusers = false;
+        if ($user->id == $USER->id) {
+            $allusers = has_capability('moodle/course:manageactivities', \context_course::instance($mod->course));
+        }
 
         $params = [];
         if (!$allusers) {
             $params['userid'] = $user->id;
         }
 
+        $sql = '';
+        $otherextensions = null;
         switch ($mod->modname) {
             case 'assign':
                 $params['assignment'] = $mod->instance;
 
-                $extensions = $DB->get_records_menu('assign_user_flags', $params, 'extensionduedate', 'id, extensionduedate');
+                $otherextensions = $DB->get_records(
+                    'assign_user_flags',
+                    $params,
+                    'extensionduedate',
+                    'id, null as fromdate, extensionduedate as duedate, null as cutoffdate, userid'
+                );
 
-                $sql = "SELECT id, duedate
+                $sql = "SELECT id, allowsubmissionsfromdate as fromdate, duedate as duedate, cutoffdate as cutoffdate, userid
                         FROM {assign_overrides}
                         WHERE assignid = :assignment AND ";
 
-                if (!$allusers) {
-                    if (!empty($idgroupslist)) {
-                        $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
-                    } else {
-                        $sql .= "userid = :userid";
-                    }
-                } else {
-                    if (!empty($idgroupslist)) {
-                        $sql .= "groupid IN ($idgroupslist)";
-                    }
-                }
-
-                $sql .= " ORDER BY duedate";
-
-                $extensionsassign = $DB->get_records_sql($sql, $params);
-
-                foreach ($extensionsassign as $extension) {
-                    $extensions[] = $extension->duedate;
-                }
                 break;
             case 'lesson':
                 $params['lessonid'] = $mod->instance;
 
-                $sql = "SELECT id, timelimit
+                $sql = "SELECT id, null as fromdate, timelimit as duedate, null as cutoffdate, userid
                         FROM {lesson_overrides}
                         WHERE lessonid = :lessonid AND ";
 
-                if (!$allusers) {
-                    if (!empty($idgroupslist)) {
-                        $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
-                    } else {
-                        $sql .= "userid = :userid";
-                    }
-                } else {
-                    if (!empty($idgroupslist)) {
-                        $sql .= "groupid IN ($idgroupslist)";
-                    }
-                }
-
-                $sql .= " ORDER BY timelimit";
-
-                $extensionslesson = $DB->get_records_sql($sql, $params);
-
-                foreach ($extensionslesson as $extension) {
-                    $extensions[] = $extension->timelimit;
-                }
                 break;
             case 'quiz':
                 $params['quiz'] = $mod->instance;
-                $sql = "SELECT id, timeclose
+                $sql = "SELECT id, null as fromdate, timeclose as duedate, null as cutoffdate, userid
                         FROM {quiz_overrides}
                         WHERE quiz = :quiz AND ";
 
-                if (!$allusers) {
-                    if (!empty($idgroupslist)) {
-                        $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
-                    } else {
-                        $sql .= "userid = :userid";
-                    }
-                } else {
-                    if (!empty($idgroupslist)) {
-                        $sql .= "groupid IN ($idgroupslist)";
-                    }
-                }
-
-                $sql .= " ORDER BY timeclose";
-
-                $extensionsquiz = $DB->get_records_sql($sql, $params);
-
-                foreach ($extensionsquiz as $extension) {
-                    $extensions[] = $extension->timeclose;
-                }
-
                 break;
+            default:
+                return $extensions;
+        }
+
+        if (!$allusers) {
+            if (!empty($idgroupslist)) {
+                $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+            } else {
+                $sql .= "userid = :userid";
+            }
+        } else {
+            if (!empty($idgroupslist)) {
+                $sql .= "groupid IN ($idgroupslist)";
+            }
+        }
+
+        $sql = rtrim($sql, ' AND ');
+        $sql .= " ORDER BY duedate";
+
+        $cmextensions = $DB->get_records_sql($sql, $params);
+
+        if ($otherextensions) {
+            $cmextensions = array_merge($cmextensions, $otherextensions);
+        }
+
+        $dateshort = get_string('strftimedatetimeshort', 'langconfig');
+
+        if ($allusers) {
+            // Count the number of users with extensions. Use a counter to avoid duplicates.
+            $userscounter = [];
+            foreach ($cmextensions as $extension) {
+                $userscounter[$extension->userid] = true;
+            }
+            if (count($userscounter) > 0) {
+                $extensions[] = get_string('extensiondate_general', 'report_courseagenda', count($userscounter));
+            }
+        } else {
+            foreach ($cmextensions as $extension) {
+                if ($extension->fromdate) {
+                    $extensiondate = userdate($extension->fromdate, $dateshort);
+                    $extensions[] = get_string('extensiondate_from', 'report_courseagenda', $extensiondate);
+                }
+                if ($extension->duedate) {
+                    $extensiondate = userdate($extension->duedate, $dateshort);
+                    $extensions[] = get_string('extensiondate_due', 'report_courseagenda', $extensiondate);
+                }
+                if ($extension->cutoffdate) {
+                    $extensiondate = userdate($extension->cutoffdate, $dateshort);
+                    $extensions[] = get_string('extensiondate_cutoff', 'report_courseagenda', $extensiondate);
+                }
+            }
         }
 
         return $extensions;
