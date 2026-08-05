@@ -18,6 +18,10 @@ namespace report_courseagenda\local;
 
 use core_grades\component_gradeitems;
 
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->dirroot . '/grade/report/user/lib.php');
+
 /**
  * Class controller
  *
@@ -1401,7 +1405,7 @@ class controller {
      * @return array The activity extensions for the user.
      */
     public static function get_activityextensions(\cm_info $mod, object $user, array $groups): array {
-        global $DB, $USER;
+        global $DB, $USER, $OUTPUT;
 
         $extensions = [];
 
@@ -1424,21 +1428,25 @@ class controller {
 
         $sql = '';
         $otherextensions = null;
+        $extensionlink =  null;
         switch ($mod->modname) {
             case 'assign':
                 $params['assignment'] = $mod->instance;
 
-                $otherextensions = $DB->get_records(
-                    'assign_user_flags',
-                    $params,
-                    'extensionduedate',
-                    'id, null as fromdate, extensionduedate as duedate, null as cutoffdate, userid'
-                );
+                $othersql = "SELECT id, null as fromdate, extensionduedate as duedate, null as cutoffdate, userid
+                        FROM {assign_user_flags}
+                        WHERE assignment = :assignment AND extensionduedate > 0 ";
+
+                if (!$allusers) {
+                    $othersql .= "AND userid = :userid";
+                }
+                $otherextensions = $DB->get_records_sql($othersql, $params);
 
                 $sql = "SELECT id, allowsubmissionsfromdate as fromdate, duedate as duedate, cutoffdate as cutoffdate, userid
                         FROM {assign_overrides}
                         WHERE assignid = :assignment AND ";
 
+                $extensionlink = new \moodle_url('/mod/assign/overrides.php', ['cmid' => $mod->id, 'mode' => 'user']);
                 break;
             case 'lesson':
                 $params['lessonid'] = $mod->instance;
@@ -1447,6 +1455,7 @@ class controller {
                         FROM {lesson_overrides}
                         WHERE lessonid = :lessonid AND ";
 
+                $extensionlink = new \moodle_url('/mod/lesson/overrides.php', ['cmid' => $mod->id, 'mode' => 'user']);
                 break;
             case 'quiz':
                 $params['quiz'] = $mod->instance;
@@ -1454,6 +1463,7 @@ class controller {
                         FROM {quiz_overrides}
                         WHERE quiz = :quiz AND ";
 
+                $extensionlink = new \moodle_url('/mod/quiz/overrides.php', ['cmid' => $mod->id, 'mode' => 'user']);
                 break;
             default:
                 return $extensions;
@@ -1475,6 +1485,7 @@ class controller {
         $sql .= " ORDER BY duedate";
 
         $cmextensions = $DB->get_records_sql($sql, $params);
+        $hasglobalextensions = !empty($cmextensions);
 
         if ($otherextensions) {
             $cmextensions = array_merge($cmextensions, $otherextensions);
@@ -1489,7 +1500,18 @@ class controller {
                 $userscounter[$extension->userid] = true;
             }
             if (count($userscounter) > 0) {
-                $extensions[] = get_string('extensiondate_general', 'report_courseagenda', count($userscounter));
+                $msg = get_string('extensiondate_general', 'report_courseagenda', count($userscounter));
+
+                if ($extensionlink && $hasglobalextensions) {
+                    $msg .= \html_writer::link(
+                        $extensionlink,
+                        get_string('extensions_goto', 'report_courseagenda') .
+                        $OUTPUT->pix_icon('i/externallink', '', 'moodle', ['class' => 'icon']) . ' ',
+                        ['class' => 'btn btn-link btn-sm', 'target' => '_blank']
+                    );
+                }
+
+                $extensions[] = $msg;
             }
         } else {
             foreach ($cmextensions as $extension) {

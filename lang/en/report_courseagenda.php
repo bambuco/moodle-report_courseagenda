@@ -50,6 +50,7 @@ $string['extensiondate_cutoff'] = 'The activity cut-off date was extended until 
 $string['extensiondate_due'] = 'The activity was extended until <span>{$a}</span>';
 $string['extensiondate_from'] = 'The activity was extended from <span>{$a->from}</span>';
 $string['extensiondate_general'] = 'The activity was extended for {$a} students';
+$string['extensions_goto'] = 'Go to extensions';
 $string['feedbackdate'] = 'Feedback date';
 $string['field_academiccredits'] = 'Academic credits';
 $string['field_academiccredits_help'] = 'A custom field to use for the academic credits in the course.';
