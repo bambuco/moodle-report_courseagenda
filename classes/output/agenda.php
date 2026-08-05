@@ -155,6 +155,8 @@ class agenda implements renderable, templatable {
             ];
         }
 
+        $defaultfilteroption = $reportconfig->defaultfilteroption ?? 'allactivities';
+
         $defaultvariables = [
             'baseurl' => $CFG->wwwroot,
             'course' => $course,
@@ -172,6 +174,7 @@ class agenda implements renderable, templatable {
             'helpprogress' => (object)[
                 'text' => get_string('titleprogresstooltip', 'report_courseagenda'),
             ],
+            'defaultfilteroption' => $defaultfilteroption,
         ];
 
         $PAGE->requires->js_call_amd('report_courseagenda/main', 'init', []);

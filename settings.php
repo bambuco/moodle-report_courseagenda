@@ -87,6 +87,13 @@ if ($ADMIN->fulltree) {
     $setting = new admin_setting_configcheckbox($name, $title, $help, 0);
     $settings->add($setting);
 
+    // Exclude sections by name.
+    $name = 'report_courseagenda/excludesections';
+    $title = get_string('excludesections', 'report_courseagenda');
+    $help = get_string('excludesections_help', 'report_courseagenda');
+    $setting = new admin_setting_configtextarea($name, $title, $help, '');
+    $settings->add($setting);
+
     // Modules to exclude.
     $name = 'report_courseagenda/excludemodules';
     $title = get_string('excludemodules', 'report_courseagenda');
@@ -120,6 +127,18 @@ if ($ADMIN->fulltree) {
     $title = get_string('daystosendactivity', 'report_courseagenda');
     $help = get_string('daystosendactivity_help', 'report_courseagenda');
     $setting = new admin_setting_configtext($name, $title, $help, 0, PARAM_INT);
+    $settings->add($setting);
+
+    // Default filter to show activities.
+    $name = 'report_courseagenda/defaultfilteroption';
+    $title = get_string('defaultfilteroption', 'report_courseagenda');
+    $help = get_string('defaultfilteroption_help', 'report_courseagenda');
+    $options = [
+        'all' => get_string('allactivities', 'report_courseagenda'),
+        'weighted' => get_string('weightedactivities', 'report_courseagenda'),
+        'notweighted' => get_string('notweightedactivities', 'report_courseagenda'),
+    ];
+    $setting = new admin_setting_configselect($name, $title, $help, 'allactivities', $options);
     $settings->add($setting);
 
     // Appearance settings.

@@ -42,6 +42,9 @@ export const init = () => {
     $('#mag-select-byweighted').on('change', function(e) {
         selectByWeighted(e, $(this));
     });
+
+    const byweighteddefault = $('#mag-select-byweighted').data('default');
+    $('#mag-select-byweighted').val(byweighteddefault).trigger('change');
 };
 
 /**

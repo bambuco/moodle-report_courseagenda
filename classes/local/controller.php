@@ -535,6 +535,13 @@ class controller {
         $reportconfig = get_config('report_courseagenda');
         $includesection0 = $reportconfig->includesection0;
 
+        $excludesections = trim($reportconfig->excludesections);
+        $excludesections = explode("\n", $excludesections);
+        $excludesections = array_map('trim', $excludesections);
+        $excludesections = array_filter($excludesections, function ($sectionname) {
+            return !empty($sectionname);
+        });
+
         $completioninfo = new \completion_info($course);
         $hascompletion = $course->enablecompletion && $completioninfo->is_tracked_user($user->id);
 
@@ -579,6 +586,12 @@ class controller {
         foreach ($coursesections as $coursesection) {
             if (!$includesection0 && $coursesection->section == 0) {
                 continue;
+            }
+
+            foreach ($excludesections as $excludesection) {
+                if (self::section_name_matches_exclusion($coursesection->name, $excludesection)) {
+                    continue 2;
+                }
             }
 
             if (!$coursesection->visible && !$hiddensections) {
@@ -900,6 +913,34 @@ class controller {
     }
 
     /**
+     * Check whether a section name matches an exclusion rule.
+     *
+     * Plain text rules require an exact match. Regex behavior is only enabled
+     * when the configured value contains regex metacharacters.
+     *
+     * @param string $sectionname The course section name.
+     * @param string $rule The configured exclusion rule.
+     * @return bool True when the section must be excluded.
+     */
+    protected static function section_name_matches_exclusion(string $sectionname, string $rule): bool {
+        if (!self::has_regex_metacharacters($rule)) {
+            return \core_text::strtolower($sectionname) === \core_text::strtolower($rule);
+        }
+
+        return @preg_match('/' . $rule . '/iu', $sectionname) === 1;
+    }
+
+    /**
+     * Detect whether an exclusion rule should be interpreted as regex.
+     *
+     * @param string $rule The configured exclusion rule.
+     * @return bool True when the rule contains regex metacharacters.
+     */
+    protected static function has_regex_metacharacters(string $rule): bool {
+        return preg_match('/[\\\\.\+\*\?\[\^\]\$\(\)\{\}\|]/', $rule) === 1;
+    }
+
+    /**
      * Return the enable date of an activity.
      *
      * @param \cm_info $mod The course module info.
@@ -1027,7 +1068,10 @@ class controller {
         $coursemodules = self::get_coursemodules($course->id);
 
         foreach ($gradeitems as $gradeitem) {
-            if (in_array($gradeitem->itemmodule, $excludemodules)) {
+            if (
+                in_array($gradeitem->itemmodule, $excludemodules)
+                || (property_exists($gradeitem, 'gradetype') && $gradeitem->gradetype == GRADE_TYPE_NONE)
+            ) {
                 continue;
             }
 
@@ -1067,15 +1111,17 @@ class controller {
             $gradeitem = $gradegrade->grade_item;
             $customgradeinfo->item = $gradeitem;
 
+            $gradehidden = $gradegrade->is_hidden();
+
             // Hidden Items.
-            if ($gradeitem->is_hidden()) {
+            if ($gradehidden) {
                 $customgradeinfo->info->visible = false;
                 continue;
             }
 
             // If this is a hidden grade item, hide it completely from the user.
             if (
-                $gradegrade->is_hidden() &&
+                $gradehidden &&
                 !$canviewhidden &&
                 (
                     $showhiddenitems == GRADE_REPORT_USER_HIDE_HIDDEN ||
@@ -1146,7 +1192,7 @@ class controller {
             $gradestatus = '';
 
             $context = [
-                'hidden' => $gradegrade->is_hidden(),
+                'hidden' => $gradehidden,
                 'locked' => $gradegrade->is_locked(),
                 'overridden' => $gradegrade->is_overridden(),
                 'excluded' => $gradegrade->is_excluded(),
@@ -1165,7 +1211,7 @@ class controller {
                 !empty($CFG->grade_hiddenasdate)
                 && $gradegrade->get_datesubmitted()
                 && !$canviewhidden
-                && $gradegrade->is_hidden()
+                && $gradehidden
             ) {
                 // The problem here is that we do not have the time when grade value was modified
                 // 'timemodified' is general modification date for grade_grades records.
@@ -1178,7 +1224,7 @@ class controller {
                     ) . $gradestatus
                 );
                 $customgradeinfo->info->gradehiddenbydate = true;
-            } else if ($gradegrade->is_hidden()) {
+            } else if ($gradehidden) {
                 $customgradeinfo->info->gradecontent = '-';
 
                 if ($canviewhidden) {
@@ -1361,7 +1407,7 @@ class controller {
      * @return array The activity extensions for the user.
      */
     public static function get_activityextensions(\cm_info $mod, object $user, array $groups): array {
-        global $DB;
+        global $DB, $USER;
 
         $extensions = [];
 
@@ -1371,22 +1417,34 @@ class controller {
             $idgroupslist = implode(',', $groupids);
         }
 
+        // Check if the user is not the current user. Get the extensions for all users in the current instance.
+        $allusers = $user->id != $USER->id;
+
+        $params = [];
+        if (!$allusers) {
+            $params['userid'] = $user->id;
+        }
+
         switch ($mod->modname) {
             case 'assign':
-                $params = [
-                    'userid' => $user->id,
-                    'assignment' => $mod->instance,
-                ];
+                $params['assignment'] = $mod->instance;
+
                 $extensions = $DB->get_records_menu('assign_user_flags', $params, 'extensionduedate', 'id, extensionduedate');
 
                 $sql = "SELECT id, duedate
                         FROM {assign_overrides}
                         WHERE assignid = :assignment AND ";
 
-                if (!empty($idgroupslist)) {
-                    $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                if (!$allusers) {
+                    if (!empty($idgroupslist)) {
+                        $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                    } else {
+                        $sql .= "userid = :userid";
+                    }
                 } else {
-                    $sql .= "userid = :userid";
+                    if (!empty($idgroupslist)) {
+                        $sql .= "groupid IN ($idgroupslist)";
+                    }
                 }
 
                 $sql .= " ORDER BY duedate";
@@ -1398,18 +1456,22 @@ class controller {
                 }
                 break;
             case 'lesson':
-                $params = [
-                    'userid' => $user->id,
-                    'lessonid' => $mod->instance,
-                ];
+                $params['lessonid'] = $mod->instance;
+
                 $sql = "SELECT id, timelimit
                         FROM {lesson_overrides}
                         WHERE lessonid = :lessonid AND ";
 
-                if (!empty($idgroupslist)) {
-                    $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                if (!$allusers) {
+                    if (!empty($idgroupslist)) {
+                        $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                    } else {
+                        $sql .= "userid = :userid";
+                    }
                 } else {
-                    $sql .= "userid = :userid";
+                    if (!empty($idgroupslist)) {
+                        $sql .= "groupid IN ($idgroupslist)";
+                    }
                 }
 
                 $sql .= " ORDER BY timelimit";
@@ -1421,18 +1483,21 @@ class controller {
                 }
                 break;
             case 'quiz':
-                $params = [
-                    'userid' => $user->id,
-                    'quiz' => $mod->instance,
-                ];
+                $params['quiz'] = $mod->instance;
                 $sql = "SELECT id, timeclose
                         FROM {quiz_overrides}
                         WHERE quiz = :quiz AND ";
 
-                if (!empty($idgroupslist)) {
-                    $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                if (!$allusers) {
+                    if (!empty($idgroupslist)) {
+                        $sql .= "(userid = :userid OR groupid IN ($idgroupslist))";
+                    } else {
+                        $sql .= "userid = :userid";
+                    }
                 } else {
-                    $sql .= "userid = :userid";
+                    if (!empty($idgroupslist)) {
+                        $sql .= "groupid IN ($idgroupslist)";
+                    }
                 }
 
                 $sql .= " ORDER BY timeclose";

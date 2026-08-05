@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component    = 'report_courseagenda';
 $plugin->release      = '4.3.0';
-$plugin->version      = 2025011900.14;
+$plugin->version      = 2025011900.16;
 $plugin->requires     = 2023100900;
 $plugin->supported    = [405, 405];
 $plugin->maturity     = MATURITY_ALPHA;

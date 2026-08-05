@@ -40,8 +40,12 @@ $string['daystograde_help'] = 'The number of days that a teacher has to grade a 
 $string['daystosendactivity'] = 'Days to send activity';
 $string['daystosendactivity_help'] = 'The number of days a student has to submit an activity before the submission alert is generated.';
 $string['deadlinedelivery'] = 'Deadline for delivery';
+$string['defaultfilteroption'] = 'Default filter option';
+$string['defaultfilteroption_help'] = 'Select the default filter option to show activities in the report.';
 $string['excludemodules'] = 'Exclude modules';
 $string['excludemodules_help'] = 'Select the modules to exclude from the report.';
+$string['excludesections'] = 'Exclude sections by name';
+$string['excludesections_help'] = 'Enter the names of the sections to exclude from the report, one per line. Plain text is matched exactly. If you need partial or pattern-based matches, use a regular expression. For example, to exclude all sections that start with "Week", you can use the regular expression "^Week".';
 $string['extensiondate'] = 'The activity was extended until <span>{$a}</span>';
 $string['feedbackdate'] = 'Feedback date';
 $string['field_academiccredits'] = 'Academic credits';
@@ -121,4 +125,3 @@ $string['weighing'] = 'Weighing';
 $string['weightedactivities'] = 'Weighted activities';
 $string['workshopname_assessment'] = 'Assessment';
 $string['workshopname_submission'] = 'Submission';
-
