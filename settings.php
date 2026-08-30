@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use report_courseagenda\local\controller as controller;
+
 defined('MOODLE_INTERNAL') || die();
 
 if ($ADMIN->fulltree) {
@@ -60,10 +62,10 @@ if ($ADMIN->fulltree) {
     $title = get_string('coursedurationformat', 'report_courseagenda');
     $help = get_string('coursedurationformat_help', 'report_courseagenda');
     $options = [
-        \report_courseagenda\local\controller::COURSEDURATION_DAYS => get_string('days'),
-        \report_courseagenda\local\controller::COURSEDURATION_WEEKS => get_string('weeks'),
+        controller::COURSEDURATION_DAYS => get_string('days'),
+        controller::COURSEDURATION_WEEKS => get_string('weeks'),
     ];
-    $setting = new admin_setting_configselect($name, $title, $help, 0, $options);
+    $setting = new admin_setting_configselect($name, $title, $help, controller::COURSEDURATION_DAYS, $options);
     $settings->add($setting);
 
     // Custom field: academic credits.
@@ -138,7 +140,7 @@ if ($ADMIN->fulltree) {
         'weighted' => get_string('weightedactivities', 'report_courseagenda'),
         'notweighted' => get_string('notweightedactivities', 'report_courseagenda'),
     ];
-    $setting = new admin_setting_configselect($name, $title, $help, 'allactivities', $options);
+    $setting = new admin_setting_configselect($name, $title, $help, 'all', $options);
     $settings->add($setting);
 
     // Appearance settings.
