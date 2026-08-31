@@ -1428,7 +1428,7 @@ class controller {
 
         $sql = '';
         $otherextensions = null;
-        $extensionlink =  null;
+        $extensionlink = null;
         switch ($mod->modname) {
             case 'assign':
                 $params['assignment'] = $mod->instance;
